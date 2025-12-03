@@ -1239,7 +1239,7 @@ pub const AF_UNSPEC: c_int = 0;
 pub const AF_LOCAL: c_int = 1;
 pub const AF_UNIX: c_int = 1;
 pub const AF_FILE: c_int = 1;
-pub const AF_INET: c_int = 2;
+pub const AF_INET: sa_family_t = 2;
 pub const AF_IMPLINK: c_int = 3;
 pub const AF_PUP: c_int = 4;
 pub const AF_CHAOS: c_int = 5;
@@ -1263,7 +1263,7 @@ pub const pseudo_AF_RTIP: c_int = 22;
 pub const AF_IPX: c_int = 23;
 pub const AF_SIP: c_int = 24;
 pub const pseudo_AF_PIP: c_int = 25;
-pub const AF_INET6: c_int = 26;
+pub const AF_INET6: sa_family_t = 26;
 
 /// Constants may change across releases. See the [usage guidelines](crate#usage-guidelines)
 /// for details.
