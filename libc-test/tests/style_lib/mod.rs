@@ -105,6 +105,7 @@ struct ExprCfgIf {
     else_branch: Option<Box<ExprCfgElse>>,
 }
 
+#[expect(clippy::large_enum_variant, reason = "Pending finding a reason.")]
 enum ExprCfgElse {
     /// Final block with no condition `else { /* ... */ }`.
     Block(Vec<syn::Item>),
@@ -169,11 +170,9 @@ impl StyleChecker {
                 .origin(error.path.to_str().expect("path to be UTF-8"))
                 .fold(true)
                 .annotation(Level::Error.span(error.span.byte_range()).label(&error.msg));
-            if let Some((help_span, help_msg)) = &error.help {
-                if let Some(help_span) = help_span {
-                    snippet = snippet
-                        .annotation(Level::Help.span(help_span.byte_range()).label(help_msg));
-                }
+            if let Some((Some(help_span), help_msg)) = &error.help {
+                snippet =
+                    snippet.annotation(Level::Help.span(help_span.byte_range()).label(help_msg));
             }
 
             let mut msg = Level::Error.title(&error.title).snippet(snippet);
@@ -236,7 +235,7 @@ impl StyleChecker {
                         self.visit_item(item);
                     }
                 }
-                ExprCfgElse::If(expr_cfg_if) => self.visit_expr_cfg_if(&expr_cfg_if),
+                ExprCfgElse::If(expr_cfg_if) => self.visit_expr_cfg_if(expr_cfg_if),
             }
         }
         self.state = initial_state;
@@ -347,10 +346,8 @@ impl<'ast> Visit<'ast> for StyleChecker {
     /// just positive #[cfg(...)] attributes. We need [syn::ItemMacro]
     /// instead of [syn::Macro] because it contains the attributes.
     fn visit_item_macro(&mut self, item_macro: &'ast syn::ItemMacro) {
-        if item_macro.mac.path.is_ident("s") {
-            if !item_macro.attrs.is_empty() {
-                self.handle_s_macro_with_attrs(item_macro);
-            }
+        if item_macro.mac.path.is_ident("s") && !item_macro.attrs.is_empty() {
+            self.handle_s_macro_with_attrs(item_macro);
         }
 
         visit::visit_item_macro(self, item_macro);

@@ -10,7 +10,7 @@ use std::ffi::{
 };
 
 pub type T1Foo = i32;
-pub const T1S: *const c_char = b"foo\0".as_ptr().cast();
+pub const T1S: *const c_char = c"foo".as_ptr().cast();
 
 pub const T1N: i32 = 5;
 

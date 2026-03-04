@@ -51,7 +51,7 @@ fn walk(src_root: &Path) -> Result<()> {
             .expect("file name should not end in ..")
             .to_str()
             .expect("file name should be valid UTF-8");
-        if let "lib.rs" | "macros.rs" = &name[..] {
+        if let "lib.rs" | "macros.rs" = name {
             continue;
         }
 

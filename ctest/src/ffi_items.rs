@@ -194,7 +194,7 @@ impl<'ast> Visit<'ast> for FfiItems {
         let ident = i.ident.to_string().into_boxed_str();
         let fields = match &i.fields {
             syn::Fields::Named(fields) => collect_fields(&fields.named),
-            syn::Fields::Unnamed(fields) => collect_fields(&fields.unnamed),
+            syn::Fields::Unnamed(_) => Vec::new(),
             syn::Fields::Unit => Vec::new(),
         };
 
