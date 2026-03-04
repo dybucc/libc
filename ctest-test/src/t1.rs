@@ -1,16 +1,9 @@
 #![allow(dead_code)]
 
-use std::ffi::{
-    c_char,
-    c_double,
-    c_int,
-    c_long,
-    c_uint,
-    c_void,
-};
+use std::ffi::{c_char, c_double, c_int, c_long, c_uint, c_void};
 
 pub type T1Foo = i32;
-pub const T1S: *const c_char = b"foo\0".as_ptr().cast();
+pub const T1S: *const c_char = c"foo".as_ptr().cast();
 
 pub const T1N: i32 = 5;
 

@@ -77,7 +77,7 @@ s! {
         #[cfg(all(musl32_time64, target_endian = "big"))]
         __pad0: Padding<u32>,
         #[cfg(all(target_arch = "x86_64", target_pointer_width = "32"))]
-        pub tv_nsec: i64,
+        pub tv_nsec: c_longlong,
         #[cfg(not(all(target_arch = "x86_64", target_pointer_width = "32")))]
         pub tv_nsec: c_long,
         #[cfg(all(musl32_time64, target_endian = "little"))]

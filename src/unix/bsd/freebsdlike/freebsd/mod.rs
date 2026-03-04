@@ -1,8 +1,5 @@
 use crate::prelude::*;
-use crate::{
-    cmsghdr,
-    off_t,
-};
+use crate::{cmsghdr, off_t};
 
 pub type fflags_t = u32;
 

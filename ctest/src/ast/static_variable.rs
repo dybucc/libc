@@ -1,7 +1,4 @@
-use crate::{
-    Abi,
-    BoxStr,
-};
+use crate::{Abi, BoxStr};
 
 /// Represents a static variable in Rust.
 ///

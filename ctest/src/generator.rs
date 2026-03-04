@@ -3,37 +3,18 @@
 use std::env;
 use std::fs::File;
 use std::io::Write;
-use std::path::{
-    Path,
-    PathBuf,
-};
+use std::path::{Path, PathBuf};
 
 use askama::Template;
 use syn::visit::Visit;
 use thiserror::Error;
 
 use crate::ffi_items::FfiItems;
-use crate::template::{
-    CTestTemplate,
-    RustTestTemplate,
-};
+use crate::template::{CTestTemplate, RustTestTemplate};
 use crate::translator::translate_primitive_type;
 use crate::{
-    BoxStr,
-    Const,
-    Field,
-    Language,
-    MapInput,
-    Parameter,
-    Result,
-    Static,
-    Struct,
-    TranslationError,
-    Type,
-    Union,
-    VolatileItemKind,
-    expand,
-    get_build_target,
+    BoxStr, Const, Field, Language, MapInput, Parameter, Result, Static, Struct, TranslationError,
+    Type, Union, VolatileItemKind, expand, get_build_target,
 };
 
 /// The default Rust edition used to generate the code.

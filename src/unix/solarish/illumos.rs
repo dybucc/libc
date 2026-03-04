@@ -1,13 +1,7 @@
 use crate::prelude::*;
 use crate::{
-    exit_status,
-    off_t,
-    NET_MAC_AWARE,
-    NET_MAC_AWARE_INHERIT,
-    PRIV_AWARE_RESET,
-    PRIV_DEBUG,
-    PRIV_PFEXEC,
-    PRIV_XPOLICY,
+    exit_status, off_t, NET_MAC_AWARE, NET_MAC_AWARE_INHERIT, PRIV_AWARE_RESET, PRIV_DEBUG,
+    PRIV_PFEXEC, PRIV_XPOLICY,
 };
 
 pub type lgrp_rsrc_t = c_int;

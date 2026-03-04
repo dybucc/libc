@@ -1,9 +1,5 @@
 use crate::prelude::*;
-use crate::{
-    off64_t,
-    off_t,
-    pthread_mutex_t,
-};
+use crate::{off64_t, off_t, pthread_mutex_t};
 
 pub type blksize_t = i64;
 pub type nlink_t = u64;

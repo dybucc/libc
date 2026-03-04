@@ -7,19 +7,9 @@ use syn::spanned::Spanned;
 
 use crate::cdecl::Constness;
 use crate::ffi_items::FfiItems;
-use crate::translator::{
-    TranslationErrorKind,
-    Translator,
-};
+use crate::translator::{TranslationErrorKind, Translator};
 use crate::{
-    BoxStr,
-    Field,
-    MapInput,
-    Result,
-    TestGenerator,
-    TranslationError,
-    VolatileItemKind,
-    cdecl,
+    BoxStr, Field, MapInput, Result, TestGenerator, TranslationError, VolatileItemKind, cdecl,
 };
 
 /// Represents the Rust side of the generated testing suite.
@@ -620,10 +610,11 @@ impl<'a> TranslateHelper<'a> {
         helper
     }
 
-    /// Skips entire items such as structs, constants, and aliases from being tested.
+    /// Skips entire items such as structs, constants, and aliases from being
+    /// tested.
     ///
-    /// Does not skip specific tests or specific fields. If `skip_private` is true,
-    /// it will skip tests for all private items.
+    /// Does not skip specific tests or specific fields. If `skip_private` is
+    /// true, it will skip tests for all private items.
     fn filter_ffi_items(&mut self) {
         let verbose = self.generator.verbose_skip;
 

@@ -1,8 +1,5 @@
 use crate::prelude::*;
-use crate::{
-    cmsghdr,
-    off_t,
-};
+use crate::{cmsghdr, off_t};
 
 pub type dev_t = u32;
 pub type wchar_t = i32;

@@ -2,21 +2,13 @@
 
 use std::ops::Deref;
 
-use syn::punctuated::Punctuated;
-use syn::visit::Visit;
-
-use crate::{
-    Abi,
-    BoxStr,
-    Const,
-    Field,
-    Fn,
-    Parameter,
-    Static,
-    Struct,
-    Type,
-    Union,
+use syn::{
+    Attribute, Expr, ExprLit, Fields, FnArg, ForeignItem, ForeignItemFn, ForeignItemStatic,
+    ItemConst, ItemForeignMod, ItemStruct, ItemType, ItemUnion, Lit, Meta, MetaNameValue, Pat,
+    ReturnType, punctuated::Punctuated, visit::Visit,
 };
+
+use crate::{Abi, BoxStr, Const, Field, Fn, Parameter, Static, Struct, Type, Union};
 
 /// Represents a collected set of top-level Rust items relevant to FFI generation or analysis.
 ///
@@ -105,7 +97,7 @@ fn collect_fields(fields: &Punctuated<syn::Field, syn::Token![,]>) -> Vec<Field>
         .collect()
 }
 
-fn extract_single_link_name(attrs: &[syn::Attribute]) -> Option<BoxStr> {
+fn extract_single_link_name(attrs: &[Attribute]) -> Option<BoxStr> {
     let mut link_name_iter = attrs
         .iter()
         .filter(|attr| attr.path().is_ident("link_name"));
@@ -115,9 +107,9 @@ fn extract_single_link_name(attrs: &[syn::Attribute]) -> Option<BoxStr> {
         panic!("multiple `#[link_name = ...]` attributes found: {attr:?}");
     }
 
-    if let syn::Meta::NameValue(nv) = &link_name.meta
-        && let syn::Expr::Lit(expr_lit) = &nv.value
-        && let syn::Lit::Str(lit_str) = &expr_lit.lit
+    if let Meta::NameValue(MetaNameValue { value, .. }) = &link_name.meta
+        && let Expr::Lit(ExprLit { lit, .. }) = value
+        && let Lit::Str(lit_str) = lit
     {
         return Some(lit_str.value().into_boxed_str());
     }
@@ -125,7 +117,7 @@ fn extract_single_link_name(attrs: &[syn::Attribute]) -> Option<BoxStr> {
     panic!("unrecognized `link_name` syntax: {link_name:?}");
 }
 
-fn visit_foreign_item_fn(table: &mut FfiItems, i: &syn::ForeignItemFn, abi: &Abi) {
+fn visit_foreign_item_fn(table: &mut FfiItems, i: &ForeignItemFn, abi: &Abi) {
     let public = is_visible(&i.vis);
     let abi = abi.clone();
     let ident = i.sig.ident.to_string().into_boxed_str();
@@ -134,23 +126,22 @@ fn visit_foreign_item_fn(table: &mut FfiItems, i: &syn::ForeignItemFn, abi: &Abi
         .inputs
         .iter()
         .map(|arg| match arg {
-            syn::FnArg::Typed(arg) => Parameter {
-                ident: match arg.pat.deref() {
-                    syn::Pat::Ident(i) => i.ident.to_string().into_boxed_str(),
-                    _ => {
-                        unimplemented!("Foreign functions are unlikely to have any other pattern.")
-                    }
+            FnArg::Typed(arg) => Parameter {
+                ident: if let Pat::Ident(i) = arg.pat.deref() {
+                    i.ident.to_string().into_boxed_str()
+                } else {
+                    unimplemented!("Foreign functions are unlikely to have any other pattern.");
                 },
                 ty: arg.ty.deref().clone(),
             },
-            syn::FnArg::Receiver(_) => {
+            FnArg::Receiver(_) => {
                 unreachable!("Foreign functions can't have self/receiver parameters.")
             }
         })
-        .collect::<Vec<_>>();
+        .collect();
     let return_type = match &i.sig.output {
-        syn::ReturnType::Default => None,
-        syn::ReturnType::Type(_, ty) => Some(ty.deref().clone()),
+        ReturnType::Default => None,
+        ReturnType::Type(_, ty) => Some(ty.deref().clone()),
     };
     let link_name = extract_single_link_name(&i.attrs);
 
@@ -164,7 +155,7 @@ fn visit_foreign_item_fn(table: &mut FfiItems, i: &syn::ForeignItemFn, abi: &Abi
     });
 }
 
-fn visit_foreign_item_static(table: &mut FfiItems, i: &syn::ForeignItemStatic, abi: &Abi) {
+fn visit_foreign_item_static(table: &mut FfiItems, i: &ForeignItemStatic, abi: &Abi) {
     let public = is_visible(&i.vis);
     let abi = abi.clone();
     let ident = i.ident.to_string().into_boxed_str();
@@ -181,7 +172,7 @@ fn visit_foreign_item_static(table: &mut FfiItems, i: &syn::ForeignItemStatic, a
 }
 
 impl<'ast> Visit<'ast> for FfiItems {
-    fn visit_item_type(&mut self, i: &'ast syn::ItemType) {
+    fn visit_item_type(&mut self, i: &'ast ItemType) {
         let public = is_visible(&i.vis);
         let ty = i.ty.deref().clone();
         let ident = i.ident.to_string().into_boxed_str();
@@ -189,13 +180,13 @@ impl<'ast> Visit<'ast> for FfiItems {
         self.aliases.push(Type { public, ident, ty });
     }
 
-    fn visit_item_struct(&mut self, i: &'ast syn::ItemStruct) {
+    fn visit_item_struct(&mut self, i: &'ast ItemStruct) {
         let public = is_visible(&i.vis);
         let ident = i.ident.to_string().into_boxed_str();
         let fields = match &i.fields {
-            syn::Fields::Named(fields) => collect_fields(&fields.named),
-            syn::Fields::Unnamed(fields) => collect_fields(&fields.unnamed),
-            syn::Fields::Unit => Vec::new(),
+            Fields::Named(fields) => collect_fields(&fields.named),
+            Fields::Unnamed(_) => Vec::new(),
+            Fields::Unit => Vec::new(),
         };
 
         self.structs.push(Struct {
@@ -205,7 +196,7 @@ impl<'ast> Visit<'ast> for FfiItems {
         });
     }
 
-    fn visit_item_union(&mut self, i: &'ast syn::ItemUnion) {
+    fn visit_item_union(&mut self, i: &'ast ItemUnion) {
         let public = is_visible(&i.vis);
         let ident = i.ident.to_string().into_boxed_str();
         let fields = collect_fields(&i.fields.named);
@@ -217,15 +208,15 @@ impl<'ast> Visit<'ast> for FfiItems {
         });
     }
 
-    fn visit_item_const(&mut self, i: &'ast syn::ItemConst) {
+    fn visit_item_const(&mut self, i: &'ast ItemConst) {
         let public = is_visible(&i.vis);
         let ident = i.ident.to_string().into_boxed_str();
-        let ty = i.ty.deref().clone();
+        let ty = (*i.ty).clone();
 
         self.constants.push(Const { public, ident, ty });
     }
 
-    fn visit_item_foreign_mod(&mut self, i: &'ast syn::ItemForeignMod) {
+    fn visit_item_foreign_mod(&mut self, i: &'ast ItemForeignMod) {
         // Because we need to store the ABI we can't directly visit the foreign
         // functions/statics.
 
@@ -235,12 +226,12 @@ impl<'ast> Visit<'ast> for FfiItems {
             .name
             .clone()
             .map(|s| Abi::from(s.value().as_str()))
-            .unwrap_or_else(|| Abi::C);
+            .unwrap_or(Abi::C);
 
         for item in &i.items {
             match item {
-                syn::ForeignItem::Fn(function) => visit_foreign_item_fn(self, function, &abi),
-                syn::ForeignItem::Static(static_variable) => {
+                ForeignItem::Fn(function) => visit_foreign_item_fn(self, function, &abi),
+                ForeignItem::Static(static_variable) => {
                     visit_foreign_item_static(self, static_variable, &abi)
                 }
                 _ => (),

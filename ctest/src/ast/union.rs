@@ -1,7 +1,4 @@
-use crate::{
-    BoxStr,
-    Field,
-};
+use crate::{BoxStr, Field};
 
 /// Represents a union defined in Rust.
 #[derive(Debug, Clone)]

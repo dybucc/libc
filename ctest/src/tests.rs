@@ -2,16 +2,8 @@ use syn::spanned::Spanned;
 use syn::visit::Visit;
 
 use crate::ffi_items::FfiItems;
-use crate::translator::{
-    TranslationErrorKind,
-    Translator,
-};
-use crate::{
-    Result,
-    TestGenerator,
-    TranslationError,
-    cdecl,
-};
+use crate::translator::{TranslationErrorKind, Translator};
+use crate::{Result, TestGenerator, TranslationError, cdecl};
 
 const ALL_ITEMS: &str = r#"
 use std::os::raw::c_void;

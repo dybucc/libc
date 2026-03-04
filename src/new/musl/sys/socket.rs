@@ -53,10 +53,7 @@ extern "C" {
 
 cfg_if! {
     if #[cfg(any(target_arch = "mips", target_arch = "mips64"))] {
-        pub use crate::bits::socket::{
-            SOCK_DGRAM,
-            SOCK_STREAM,
-        };
+        pub use crate::bits::socket::{SOCK_DGRAM, SOCK_STREAM};
     } else {
         pub const SOCK_STREAM: c_int = 1;
         pub const SOCK_DGRAM: c_int = 2;
