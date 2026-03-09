@@ -19,6 +19,32 @@ pub type pid_t = i32;
 pub type in_addr_t = u32;
 pub type in_port_t = u16;
 pub type sighandler_t = size_t;
+// FIXME: `target_vendor` is slated for deprecation but that won't come without
+// a similar replacement (potentially using `target_family`.) See
+// rust-lang/rust#100343.
+#[cfg(any(
+    target_vendor = "apple",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+    target_os = "openbsd",
+    target_os = "netbsd",
+))]
+// FIXME(1.0): once we settle for a definition for `sighandler_t`, ensure it's
+// sound for `sig_t` to be a raw pointer to it, as that's the definition in the
+// BSDs and Apple targets.
+//
+// See <https://github.com/freebsd/freebsd-src/blob/77d6c45afdca8a524a88edfb3097d4d9dc90b583/sys/sys/signal.h#L160>
+// and <https://github.com/freebsd/freebsd-src/blob/77d6c45afdca8a524a88edfb3097d4d9dc90b583/sys/sys/signal.h#L408>
+// for FreeBSD details.
+//
+// Because `sighandler_t` is defined in FreeBSD as a function alias that
+// implicitly decays to the function pointer and not a "straight" alias to a
+// function pointer, we can probably keep the same definitions in other BSDs.
+//
+// They have no `sighandler_t` but do have the same `sig_t`. Of course, this is
+// going to need tweaking because raw pointers to functions aren't a thing just
+// yet in Rust.
+pub type sig_t = *const sighandler_t;
 pub type cc_t = c_uchar;
 
 cfg_if! {
@@ -1293,7 +1319,23 @@ extern "C" {
     #[cfg_attr(gnu_file_offset_bits64, link_name = "ftruncate64")]
     pub fn ftruncate(fd: c_int, length: off_t) -> c_int;
 
+    #[cfg(not(any(
+        target_vendor = "apple",
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )))]
     pub fn signal(signum: c_int, handler: sighandler_t) -> sighandler_t;
+
+    #[cfg(any(
+        target_vendor = "apple",
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
+    pub fn signal(signum: c_int, handler: sig_t) -> sig_t;
 
     #[cfg_attr(target_os = "netbsd", link_name = "__getrusage50")]
     #[cfg_attr(gnu_time_bits64, link_name = "__getrusage64")]
