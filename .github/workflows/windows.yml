@@ -1,0 +1,32 @@
+name: Windows test
+
+on: workflow_dispatch
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Test
+    runs-on: windows-2025
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+          - target: i686-pc-windows-gnu
+    env:
+      TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Rust toolchain
+        run: |
+          if [ "$TARGET" = "i686-pc-windows-gnu" ]; then
+            rustup target add i686-pc-windows-gnu
+          fi
+          rustup default nightly-$TARGET
+          rustc -Vv
+      - name: Test
+        run: |
+          cd ./libc-test
+          cargo t --target ${{ matrix.target }}
