@@ -1,0 +1,20 @@
+name: test size of time_t
+
+on: workflow_dispatch
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v6
+      - run: |
+          rustup target add i686-pc-windows-gnu
+          rustup default nightly-i686-pc-windows-gnu
+          rustc -Vv
+      - run: |
+          cd ./libc-test
+          cargo t --target i686-pc-windows-gnu
