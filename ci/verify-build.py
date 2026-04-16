@@ -402,7 +402,7 @@ def test_target(cfg: Cfg, target: Target) -> TargetResult:
         run(cmd, env=env | {"RUST_LIBC_UNSTABLE_GNU_TIME_BITS": "64"})
         # For Windows x86 GNU to test out a backwards-incompatible 64-bit wide
         # `time_t`
-        run(cmd, env=env, extra_rustflags="--cfg 'libc_unstable_windows_gnu_time64="1"'")
+        run(cmd, env=env, extra_rustflags="--cfg 'libc_unstable_windows_gnu_time64=\"1\"'")
 
     if "musl" in target_env:
         # Check with breaking changes from musl, including 64-bit time_t on 32-bit
