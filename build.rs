@@ -138,11 +138,12 @@ fn main() {
     }
     println!("cargo:rerun-if-env-changed=RUST_LIBC_UNSTABLE_GNU_FILE_OFFSET_BITS");
     println!("cargo:rerun-if-env-changed=RUST_LIBC_UNSTABLE_GNU_TIME_BITS");
-    if target_env == "gnu"
+    if (target_env == "gnu"
         && target_os == "linux"
         && target_ptr_width == "32"
         && target_arch != "riscv32"
-        && target_arch != "x86_64"
+        && target_arch != "x86_64")
+        || target_os == "emscripten"
     {
         let defaultbits = "32".to_string();
         let (timebits, filebits) = match (
