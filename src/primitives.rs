@@ -21,6 +21,7 @@ pub use core::ffi::{
     c_ulong,
     c_ulonglong,
     c_ushort,
+    c_void,
 };
 
 #[deprecated(since = "0.2.55", note = "Use i8 instead.")]
