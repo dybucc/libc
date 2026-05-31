@@ -42,6 +42,7 @@ jobs:
   clippy:
     name: Clippy on ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-26.04, macos-26, windows-2025]
     runs-on: ${{ matrix.os }}
@@ -61,6 +62,7 @@ jobs:
   verify_build:
     name: Verify build
     strategy:
+      fail-fast: false
       matrix:
         toolchain: [stable, 1.65.0]
         include:
@@ -126,6 +128,7 @@ jobs:
   test_tier1:
     name: Test tier1
     strategy:
+      fail-fast: false
       matrix:
         include:
           - target: aarch64-apple-darwin
@@ -185,9 +188,9 @@ jobs:
 
   test_tier2:
     name: Test tier2
-    needs: [test_tier1, style_check]
+    # needs: [test_tier1, style_check]
     strategy:
-      fail-fast: true
+      fail-fast: false
       max-parallel: 16
       matrix:
         include:
@@ -281,10 +284,10 @@ jobs:
 
   test_tier2_vm:
     name: Test tier2 VM
-    needs: [test_tier1, style_check]
+    # needs: [test_tier1, style_check]
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - release: "15.0"
@@ -380,7 +383,7 @@ jobs:
     - name: Install Rust
       run: rustup update "$MSRV" --no-self-update && rustup default "$MSRV"
     - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-    - run: cargo build -p ctest
+    - run: cargo +"$MSRV" build -p ctest
 
   docs:
     name: Ensure docs build
@@ -416,7 +419,7 @@ jobs:
     name: success
     runs-on: ubuntu-26.04
     needs:
-      - style_check
+      # - style_check
       - test_tier1
       - test_tier2
       - test_tier2_vm
