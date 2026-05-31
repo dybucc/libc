@@ -60,6 +60,11 @@ pub type pthread_key_t = c_ulong;
 
 // From b_off_t.h
 pub type off_t = c_longlong;
+#[deprecated(
+    since = "0.2.187",
+    note = "Use `off_t` instead. The `libc` crate is on track to supporting solely non-suffixed \
+            variants of time and file offset types. See #PENDING for details and discussion."
+)]
 pub type off64_t = off_t;
 
 // From b_BOOL.h
