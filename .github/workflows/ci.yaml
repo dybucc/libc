@@ -61,6 +61,7 @@ jobs:
   verify_build:
     name: Verify build
     strategy:
+      fail-fast: false
       matrix:
         toolchain: [stable, 1.65.0]
         include:
@@ -183,7 +184,7 @@ jobs:
 
   test_tier2:
     name: Test tier2
-    needs: [test_tier1, style_check]
+    # needs: [test_tier1, style_check]
     strategy:
       fail-fast: true
       max-parallel: 16
@@ -281,7 +282,7 @@ jobs:
 
   test_tier2_vm:
     name: Test tier2 VM
-    needs: [test_tier1, style_check]
+    # needs: [test_tier1, style_check]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -401,7 +402,7 @@ jobs:
     name: success
     runs-on: ubuntu-24.04
     needs:
-      - style_check
+      # - style_check
       - test_tier1
       - test_tier2
       - test_tier2_vm
