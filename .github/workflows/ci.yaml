@@ -380,7 +380,7 @@ jobs:
     - name: Install Rust
       run: rustup update "$MSRV" --no-self-update && rustup default "$MSRV"
     - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-    - run: cargo build -p ctest
+    - run: cargo +"$MSRV" build -p ctest
 
   docs:
     name: Ensure docs build
