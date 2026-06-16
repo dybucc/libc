@@ -290,6 +290,17 @@ s! {
         pub val: c_int,
     }
 
+    #[cfg_attr(
+        any(target_env = "uclibc", target_env = "musl", target_env = "ohos"),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `rlimit` instead. The unsuffixed type is defined as an alias to this type, \
+                    and their memory layout is effectively equivalent. The `libc` crate is phasing \
+                    out support for suffixed variants in favor of a single, unsuffixed, fixed \
+                    bitwidth symbol."
+        ),
+        allow(deprecated)
+    )]
     pub struct rlimit64 {
         pub rlim_cur: crate::rlim64_t,
         pub rlim_max: crate::rlim64_t,
@@ -312,6 +323,17 @@ s! {
         pub d_name: [c_char; 256],
     }
 
+    #[cfg_attr(
+        any(target_env = "uclibc", target_env = "musl", target_env = "ohos"),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `dirent` instead. The unsuffixed type is defined as an alias to this type, \
+                    and their memory layout is effectively equivalent. The `libc` crate is phasing \
+                    out support for suffixed variants in favor of a single, unsuffixed, fixed \
+                    bitwidth symbol."
+        ),
+        allow(deprecated)
+    )]
     pub struct dirent64 {
         pub d_ino: crate::ino64_t,
         pub d_off: crate::off64_t,
@@ -1978,18 +2000,55 @@ extern "C" {
 cfg_if! {
     if #[cfg(not(any(target_env = "musl", target_env = "ohos")))] {
         extern "C" {
+            #[cfg_attr(
+                target_env = "uclibc",
+                deprecated(
+                    since = "0.2.187",
+                    note = "Use `freopen` instead. The unsuffixed routine is `#define`d as an \
+                            alias to the suffixed routine in default builds of uClibc. Support for \
+                            suffixed variants is phasing out in the `libc` crate."
+                )
+            )]
             pub fn freopen64(
                 filename: *const c_char,
                 mode: *const c_char,
                 file: *mut crate::FILE,
             ) -> *mut crate::FILE;
+            #[cfg_attr(
+                target_env = "uclibc",
+                deprecated(
+                    since = "0.2.187",
+                    note = "Use `fseeko` instead. The unsuffixed routine is `#define`d as an alias \
+                            to the suffixed routine in default builds of uClibc. Support for \
+                            suffixed variants is phasing out in the `libc` crate."
+                )
+            )]
             pub fn fseeko64(
                 stream: *mut crate::FILE,
-                offset: crate::off64_t,
+                #[cfg(not(target_env = "uclibc"))] offset: crate::off64_t,
+                #[cfg(target_env = "uclibc")] offset: crate::off_t,
                 whence: c_int,
             ) -> c_int;
+            #[cfg_attr(
+                target_env = "uclibc",
+                deprecated(
+                    since = "0.2.187",
+                    note = "Use `fsetpos` instead. The unsuffixed routine is `#define`d as an \
+                            alias to the suffixed routine in default builds of uClibc. Support for \
+                            suffixed variants is phasing out in the `libc` crate."
+                )
+            )]
             pub fn fsetpos64(stream: *mut crate::FILE, ptr: *const crate::fpos64_t) -> c_int;
+            #[cfg(not(target_env = "uclibc"))]
             pub fn ftello64(stream: *mut crate::FILE) -> crate::off64_t;
+            #[cfg(target_env = "uclibc")]
+            #[deprecated(
+                since = "0.2.187",
+                note = "Use `ftello` instead. The unsuffixed routine is `#define`d as an alias \
+                        to the suffixed routine in default builds of uClibc. Support for \
+                        suffixed variants is phasing out in the `libc` crate."
+            )]
+            pub fn ftello64(stream: *mut crate::FILE) -> crate::off_t;
         }
     }
 }
