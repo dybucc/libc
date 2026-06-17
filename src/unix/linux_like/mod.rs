@@ -2321,9 +2321,9 @@ cfg_if! {
                     note = "Use `ftruncate` instead. Under 64-bit ABIs, Android aliases these \
                             routines, and the `libc` crate is phasing out support for suffixed \
                             types in favor of a single unsuffixed type with a fixed bit width."
-                ),
-                allow(deprecated)
+                )
             )]
+            #[allow(deprecated)]
             pub fn readdir64(dirp: *mut crate::DIR) -> *mut crate::dirent64;
             #[cfg_attr(
                 all(target_os = "android", target_pointer_width = "64"),
@@ -2332,9 +2332,9 @@ cfg_if! {
                     note = "Use `ftruncate` instead. Under 64-bit ABIs, Android aliases these \
                             routines, and the `libc` crate is phasing out support for suffixed \
                             types in favor of a single unsuffixed type with a fixed bit width."
-                ),
-                allow(deprecated)
+                )
             )]
+            #[allow(deprecated)]
             pub fn readdir64_r(
                 dirp: *mut crate::DIR,
                 entry: *mut crate::dirent64,
