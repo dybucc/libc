@@ -119,6 +119,15 @@ s! {
         pub l_pid: crate::pid_t,
     }
 
+    #[cfg_attr(
+        target_pointer_width = "64",
+        deprecated(
+            since = "0.2.187",
+            note = "Use `flock` instead. Under 64-bit ABIs, Android aliases these types, and the \
+                    `libc` crate is phasing out support for suffixed variants in favor of a single, \
+                    unsuffixed, fixed-width symbol."
+        )
+    )]
     pub struct flock64 {
         pub l_type: c_short,
         pub l_whence: c_short,
@@ -511,6 +520,12 @@ s! {
         pub d_name: [c_char; 256],
     }
 
+    #[deprecated(
+        since = "0.2.187",
+        note = "Use `dirent` instead. This type is defined as an alias to it and the `libc` crate \
+                is phasing out support for suffixed types in favor of a single, fixed-width \
+                unsuffixed type."
+    )]
     pub struct dirent64 {
         pub d_ino: u64,
         pub d_off: i64,

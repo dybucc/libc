@@ -1,3 +1,4 @@
+#[allow(deprecated)]
 use crate::off64_t;
 use crate::prelude::*;
 
@@ -15,7 +16,7 @@ s! {
         pub st_uid: crate::uid_t,
         pub st_gid: crate::gid_t,
         pub st_rdev: crate::dev_t,
-        pub st_size: off64_t,
+        pub st_size: off_t,
         pub st_blksize: c_long,
         pub st_blocks: c_long,
         pub st_atime: c_long,
@@ -27,6 +28,13 @@ s! {
         __unused: Padding<[c_long; 3]>,
     }
 
+    #[deprecated(
+        since = "0.2.187",
+        note = "Use `stat` instead. Under 64-bit ABIs, Android aliases these types, and the `libc` \
+                crate is phasing out support for suffixed types in favor of a single, unsuffixed, \
+                fixed-width type."
+    )]
+    #[allow(deprecated)]
     pub struct stat64 {
         pub st_dev: crate::dev_t,
         pub st_ino: crate::ino_t,
@@ -156,6 +164,7 @@ s! {
 }
 
 s_no_extra_traits! {
+    #[allow(deprecated)]
     pub union __c_anonymous_uc_sigmask {
         uc_sigmask: crate::sigset_t,
         uc_sigmask64: crate::sigset64_t,
