@@ -2258,7 +2258,7 @@ cfg_if! {
                     note = "Use `ftruncate` instead. Under 64-bit ABIs, Android aliases these \
                             routines, and the `libc` crate is phasing out support for suffixed \
                             types in favor of a single unsuffixed type with a fixed bit width."
-                ),
+                )
             )]
             pub fn open64(path: *const c_char, oflag: c_int, ...) -> c_int;
             #[cfg_attr(
@@ -2268,7 +2268,7 @@ cfg_if! {
                     note = "Use `ftruncate` instead. Under 64-bit ABIs, Android aliases these \
                             routines, and the `libc` crate is phasing out support for suffixed \
                             types in favor of a single unsuffixed type with a fixed bit width."
-                ),
+                )
             )]
             pub fn openat64(fd: c_int, path: *const c_char, oflag: c_int, ...) -> c_int;
             #[cfg_attr(
