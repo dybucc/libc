@@ -2396,7 +2396,7 @@ cfg_if! {
                 all(target_os = "android", target_pointer_width = "64"),
                 deprecated(
                     since = "0.2.187",
-                    note = "Use `preadv` instead. Under 64-bit ABIs, Android aliases these types, \
+                    note = "Use `pwritev` instead. Under 64-bit ABIs, Android aliases these types, \
                             and the `libc` crate is phasing out support for suffixed variants in \
                             favor of a single fixed-width unsuffixed type."
                 ),
