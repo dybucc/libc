@@ -1,5 +1,3 @@
-#[allow(deprecated)]
-use crate::off64_t;
 use crate::prelude::*;
 
 pub type wchar_t = i32;
@@ -16,7 +14,7 @@ s! {
         pub st_uid: crate::uid_t,
         pub st_gid: crate::gid_t,
         pub st_rdev: crate::dev_t,
-        pub st_size: off_t,
+        pub st_size: crate::off_t,
         pub st_blksize: c_long,
         pub st_blocks: c_long,
         pub st_atime: c_long,
@@ -43,7 +41,7 @@ s! {
         pub st_uid: crate::uid_t,
         pub st_gid: crate::gid_t,
         pub st_rdev: crate::dev_t,
-        pub st_size: off64_t,
+        pub st_size: crate::off64_t,
         pub st_blksize: c_long,
         pub st_blocks: c_long,
         pub st_atime: c_long,
