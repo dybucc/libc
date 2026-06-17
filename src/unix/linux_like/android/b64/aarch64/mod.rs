@@ -16,7 +16,7 @@ s! {
         pub st_gid: crate::gid_t,
         pub st_rdev: crate::dev_t,
         __pad1: Padding<c_ulong>,
-        pub st_size: off_t,
+        pub st_size: crate::off_t,
         pub st_blksize: c_int,
         __pad2: Padding<c_int>,
         pub st_blocks: c_long,

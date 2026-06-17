@@ -2376,12 +2376,32 @@ cfg_if! {
         target_os = "emscripten",
     )))] {
         extern "C" {
+            #[cfg_attr(
+                all(target_os = "android", target_pointer_width = "64"),
+                deprecated(
+                    since = "0.2.187",
+                    note = "Use `preadv` instead. Under 64-bit ABIs, Android aliases these types, \
+                            and the `libc` crate is phasing out support for suffixed variants in \
+                            favor of a single fixed-width unsuffixed type."
+                ),
+                allow(deprecated)
+            )]
             pub fn preadv64(
                 fd: c_int,
                 iov: *const crate::iovec,
                 iovcnt: c_int,
                 offset: off64_t,
             ) -> ssize_t;
+            #[cfg_attr(
+                all(target_os = "android", target_pointer_width = "64"),
+                deprecated(
+                    since = "0.2.187",
+                    note = "Use `preadv` instead. Under 64-bit ABIs, Android aliases these types, \
+                            and the `libc` crate is phasing out support for suffixed variants in \
+                            favor of a single fixed-width unsuffixed type."
+                ),
+                allow(deprecated)
+            )]
             pub fn pwritev64(
                 fd: c_int,
                 iov: *const crate::iovec,
