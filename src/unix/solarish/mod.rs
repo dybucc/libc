@@ -3041,10 +3041,5 @@ cfg_if! {
         mod x86_common;
         pub use self::x86_64::*;
         pub use self::x86_common::*;
-    } else if #[cfg(target_arch = "x86")] {
-        mod x86;
-        mod x86_common;
-        pub use self::x86::*;
-        pub use self::x86_common::*;
     }
 }
