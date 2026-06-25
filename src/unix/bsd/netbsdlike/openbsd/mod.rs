@@ -2065,12 +2065,6 @@ cfg_if! {
     if #[cfg(target_arch = "aarch64")] {
         mod aarch64;
         pub use self::aarch64::*;
-    } else if #[cfg(target_arch = "arm")] {
-        mod arm;
-        pub use self::arm::*;
-    } else if #[cfg(target_arch = "mips64")] {
-        mod mips64;
-        pub use self::mips64::*;
     } else if #[cfg(target_arch = "powerpc")] {
         mod powerpc;
         pub use self::powerpc::*;
