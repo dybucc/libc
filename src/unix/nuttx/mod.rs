@@ -6,14 +6,38 @@ use crate::{
     DIR,
 };
 
+pub type pid_t = c_int;
+pub type id_t = c_int;
+pub type key_t = u32;
 pub type nlink_t = u16;
-pub type ino_t = u16;
-pub type blkcnt_t = u64;
+pub type ino_t = u32;
 pub type blksize_t = i16;
 pub type cc_t = u8;
 pub type clock_t = i64;
 pub type dev_t = i32;
-pub type fsblkcnt_t = u64;
+
+cfg_if! {
+    if #[cfg(gnu_file_offset_bits64)] {
+        pub type fsblkcnt_t = u64;
+        pub type fsfilcnt_t = u64;
+        pub type blkcnt_t = u64;
+        pub type off_t = i64;
+        pub type fpos_t = i64;
+    } else {
+        pub type fsblkcnt_t = u32;
+        pub type fsfilcnt_t = u32;
+        pub type blkcnt_t = u32;
+        pub type off_t = i32;
+        pub type fpos_t = i32;
+
+        pub type fsblkcnt_t = u64;
+        pub type fsblkcnt64_t = u64;
+
+        pub type blkcnt_t = u64;
+        pub type blkcnt64_t = u64;
+    }
+}
+
 pub type locale_t = *mut i8;
 pub type mode_t = u32;
 pub type nfds_t = u32;
@@ -24,12 +48,14 @@ pub type pthread_rwlockattr_t = i32;
 pub type pthread_t = i32;
 pub type rlim_t = i64;
 pub type sa_family_t = u16;
-pub type socklen_t = u32;
+pub type socklen_t = c_uint;
 pub type speed_t = usize;
 pub type suseconds_t = i32;
+pub type useconds_t = i32;
 pub type tcflag_t = u32;
-pub type clockid_t = i32;
+pub type clockid_t = c_int;
 pub type time_t = i64;
+pub type timer_t = *mut c_void;
 pub type wchar_t = i32;
 
 s! {

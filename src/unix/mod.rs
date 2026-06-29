@@ -14,6 +14,7 @@ pub type intptr_t = isize;
 pub type uintptr_t = usize;
 pub type ssize_t = isize;
 
+#[cfg(not(target_os = "nuttx"))]
 pub type pid_t = i32;
 pub type in_addr_t = u32;
 pub type in_port_t = u16;
@@ -586,7 +587,10 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(not(all(target_os = "linux", target_env = "gnu")))] {
+    if #[cfg(not(any(
+        all(target_os = "linux", target_env = "gnu"),
+        target_os = "nuttx"
+    )))] {
         extern_ty! {
             pub enum fpos_t {} // FIXME(unix): fill this out with a struct
         }
