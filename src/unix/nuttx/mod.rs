@@ -34,6 +34,11 @@ cfg_if! {
     }
 }
 
+// `std` requires `ssize_t` and `size_t` to be `isize` and `usize`,
+// respectively. Just exposing those types can cause issues in function
+// boundaries for certain NuttX targets. Fixing that would likely mean
+// submitting a PR to rust-lang/rust specifically with NuttX changes. We leave
+// that to the target maintainers.
 cfg_if! {
     if #[cfg(nuttx_small_mm)] {
         pub type size_t = u16;
