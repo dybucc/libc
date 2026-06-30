@@ -38,7 +38,7 @@ cfg_if! {
     if #[cfg(nuttx_small_mm)] {
         pub type size_t = u16;
         pub type ssize_t = i16;
-    } else {
+    } else if #[cfg(not(feature = "rustc-dep-of-std"))] {
         // These definitions come from architecture-specific headers. Look under
         // `arch/{arch}`. They are all the same for `ssize_t` and `size_t`. We
         // assume `__SIZE_TYPE__` is made available by the compiler. We assume
@@ -50,6 +50,9 @@ cfg_if! {
         // - `aarch64`
         pub type ssize_t = c_long;
         pub type size_t = c_ulong;
+    } else {
+        pub type ssize_t = isize;
+        pub type size_t = usize;
     }
 }
 
