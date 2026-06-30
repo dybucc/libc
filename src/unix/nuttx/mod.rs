@@ -60,7 +60,6 @@ pub type cpu_set_t = u32;
 pub type locale_t = *mut i8;
 pub type mode_t = u32;
 pub type nfds_t = u32;
-pub type off_t = i64;
 pub type pthread_key_t = i32;
 pub type pthread_mutexattr_t = u8;
 pub type pthread_rwlockattr_t = i32;
