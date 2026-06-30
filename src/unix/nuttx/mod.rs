@@ -16,6 +16,8 @@ pub type cc_t = u8;
 pub type clock_t = i64;
 pub type dev_t = i32;
 
+// LFS64 types with "64"-suffixed names are only exposed when the unsuffixed
+// types are themselves 64-bits wide. We choose to expose ony the latter.
 cfg_if! {
     if #[cfg(gnu_file_offset_bits64)] {
         pub type fsblkcnt_t = u64;
@@ -29,15 +31,32 @@ cfg_if! {
         pub type blkcnt_t = u32;
         pub type off_t = i32;
         pub type fpos_t = i32;
-
-        pub type fsblkcnt_t = u64;
-        pub type fsblkcnt64_t = u64;
-
-        pub type blkcnt_t = u64;
-        pub type blkcnt64_t = u64;
     }
 }
 
+cfg_if! {
+    if #[cfg(nuttx_small_mm)] {
+        pub type size_t = u16;
+        pub type ssize_t = i16;
+    } else {
+        // These definitions come from architecture-specific headers. Look under
+        // `arch/{arch}`. They are all the same for `ssize_t` and `size_t`. We
+        // assume `__SIZE_TYPE__` is made available by the compiler. We assume
+        // the compiler driver is likely clang. Supported target architectures
+        // at the time of writing include:
+        // - `riscv64`
+        // - `riscv32`
+        // - `arm`
+        // - `aarch64`
+        pub type ssize_t = c_long;
+        pub type size_t = c_ulong;
+    }
+}
+
+pub type rsize_t = size_t;
+
+pub type loff_t = off_t;
+pub type cpu_set_t = u32;
 pub type locale_t = *mut i8;
 pub type mode_t = u32;
 pub type nfds_t = u32;
@@ -56,7 +75,7 @@ pub type tcflag_t = u32;
 pub type clockid_t = c_int;
 pub type time_t = i64;
 pub type timer_t = *mut c_void;
-pub type wchar_t = i32;
+pub type wchar_t = c_int;
 
 s! {
     pub struct stat {
