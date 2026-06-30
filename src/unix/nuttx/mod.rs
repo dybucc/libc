@@ -34,28 +34,28 @@ cfg_if! {
     }
 }
 
-// `std` requires `ssize_t` and `size_t` to be `isize` and `usize`,
-// respectively. Just exposing those types can cause issues in function
-// boundaries for certain NuttX targets. Fixing that would likely mean
-// submitting a PR to rust-lang/rust specifically with NuttX changes. We leave
-// that to the target maintainers.
 cfg_if! {
     if #[cfg(nuttx_small_mm)] {
         pub type size_t = u16;
         pub type ssize_t = i16;
-    } else if #[cfg(not(feature = "rustc-dep-of-std"))] {
-        // These definitions come from architecture-specific headers. Look under
-        // `arch/{arch}`. They are all the same for `ssize_t` and `size_t`. We
-        // assume `__SIZE_TYPE__` is made available by the compiler. We assume
-        // the compiler driver is likely clang. Supported target architectures
-        // at the time of writing include:
-        // - `riscv64`
-        // - `riscv32`
-        // - `arm`
-        // - `aarch64`
+    } else if #[cfg(all(
+        not(feature = "rustc-dep-of-std"),
+        target_pointer_width = "64"
+    ))] {
         pub type ssize_t = c_long;
         pub type size_t = c_ulong;
+    } else if #[cfg(all(
+        not(feature = "rustc-dep-of-std"),
+        target_pointer_width = "32"
+    ))] {
+        pub type ssize_t = c_int;
+        pub type size_t = c_uint;
     } else {
+        // `std` expects `ssize_t` and `size_t` to be `isize` and `usize`,
+        // respectively. Just exposing those types can cause issues in function
+        // boundaries for 32-bit NuttX targets. Fixing that would likely mean
+        // submitting a PR to rust-lang/rust specifically with NuttX changes. We
+        // leave that to the target maintainers.
         pub type ssize_t = isize;
         pub type size_t = usize;
     }
