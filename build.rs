@@ -35,6 +35,9 @@ const ALLOWED_CFGS: &[&str] = &[
     // Corresponds to `_REDIR_TIME64` in musl: symbol redirects to __*_time64
     "musl_redir_time64",
     "vxworks_lt_25_09",
+    // Corresponds to `CONFIG_SMALL_MEMORY` in NuttX. Uses the small memory
+    // model. Narrower types are expected.
+    "nuttx_small_mm",
 ];
 
 // Extra values to allow for check-cfg.
@@ -141,6 +144,11 @@ fn main() {
     let uclibc_use_time64 = env_flag("CARGO_CFG_LIBC_UNSTABLE_UCLIBC_TIME64");
     if target_env == "uclibc" && uclibc_use_time64 {
         set_cfg("linux_time_bits64");
+    }
+
+    let nuttx_small_mm = env_flag("CARGO_CFG_LIBC_UNSTABLE_NUTTX_SMALL_MM");
+    if target_os == "nuttx" && nuttx_small_mm {
+        set_cfg("nuttx_small_mm");
     }
 
     if target_env == "gnu"
