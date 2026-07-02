@@ -89,6 +89,13 @@ cfg_if! {
     }
 }
 
+#[cfg_attr(
+    target_pointer_width = "64",
+    deprecated(
+        since = "0.2.187",
+        note = "Use `off_t` instead. The definitions are equivalent."
+    )
+)]
 pub type off64_t = __off64_t;
 pub type useconds_t = __useconds_t;
 pub type pid_t = __pid_t;
@@ -113,7 +120,16 @@ pub type u_quad_t = __u_quad_t;
 pub type fsid_t = __fsid_t;
 pub type loff_t = __loff_t;
 pub type ino_t = __ino_t;
+
+#[cfg_attr(
+    target_pointer_width = "64",
+    deprecated(
+        since = "0.2.187",
+        note = "Use `ino_t` instead. The definitions are equivalent."
+    )
+)]
 pub type ino64_t = __ino64_t;
+
 pub type dev_t = __dev_t;
 pub type mode_t = __mode_t;
 pub type nlink_t = __nlink_t;
@@ -143,8 +159,30 @@ pub type blksize_t = __blksize_t;
 pub type blkcnt_t = __blkcnt_t;
 pub type fsblkcnt_t = __fsblkcnt_t;
 pub type fsfilcnt_t = __fsfilcnt_t;
+
+#[cfg_attr(
+    target_pointer_width = "64",
+    deprecated(
+        since = "0.2.187",
+        note = "Use `blkcnt_t` instead. The definitions are equivalent."
+    )
+)]
 pub type blkcnt64_t = __blkcnt64_t;
+#[cfg_attr(
+    target_pointer_width = "64",
+    deprecated(
+        since = "0.2.187",
+        note = "Use `fsblkcnt_t` instead. The definitions are equivalent."
+    )
+)]
 pub type fsblkcnt64_t = __fsblkcnt64_t;
+#[cfg_attr(
+    target_pointer_width = "64",
+    deprecated(
+        since = "0.2.187",
+        note = "Use `fsfilcnt_t` instead. The definitions are equivalent."
+    )
+)]
 pub type fsfilcnt64_t = __fsfilcnt64_t;
 
 pub type __pthread_spinlock_t = c_int;
@@ -176,6 +214,14 @@ pub type pthread_once_t = __pthread_once;
 pub type __rlimit_resource = c_uint;
 pub type __rlimit_resource_t = __rlimit_resource;
 pub type rlim_t = __rlim_t;
+
+#[cfg_attr(
+    target_pointer_width = "64",
+    deprecated(
+        since = "0.2.187",
+        note = "Use `rlim_t` instead. The definitions are equivalent."
+    )
+)]
 pub type rlim64_t = __rlim64_t;
 
 pub type __rusage_who = c_int;
@@ -237,6 +283,13 @@ pub type nl_item = c_int;
 pub type iconv_t = *mut c_void;
 
 extern_ty! {
+    #[cfg_attr(
+        target_pointer_width = "64",
+        deprecated(
+            since = "0.2.187",
+            note = "Use `fpos_t` instead. Their definitions are equivalent."
+        )
+    )]
     pub type fpos64_t; // FIXME(hurd): fill this out with a struct
     pub type timezone;
 }
@@ -393,6 +446,13 @@ s! {
         pub d_name: [c_char; 1usize],
     }
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `dirent` instead. The definitions are equivalent."
+        )
+    )]
     pub struct dirent64 {
         pub d_ino: __ino64_t,
         pub d_reclen: c_ushort,
@@ -521,6 +581,13 @@ s! {
         pub st_spare: [c_int; STAT__SPARE_SIZE],
     }
 
+    #[cfg_attr(
+        gnu_file_offset_bits64,
+        deprecated(
+            since = "0.2.187",
+            note = "Use `stat` instead. The definitions are equivalent."
+        )
+    )]
     pub struct stat64 {
         pub st_fstype: c_int,
         pub st_dev: __fsid_t, /* Actually st_fsid */
@@ -616,6 +683,13 @@ s! {
         pub f_spare: [c_uint; 3usize],
     }
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `statfs` instead. Their definitions are equivalent."
+        )
+    )]
     pub struct statfs64 {
         pub f_type: c_uint,
         pub f_bsize: c_ulong,
@@ -672,6 +746,13 @@ s! {
         pub f_spare: [c_uint; 3usize],
     }
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `statvfs` instead. Their definitions are equivalent."
+        )
+    )]
     pub struct statvfs64 {
         pub __f_type: c_uint,
         pub f_bsize: c_ulong,
@@ -972,6 +1053,13 @@ s! {
         pub domainname: [c_char; _UTSNAME_LENGTH],
     }
 
+    #[cfg_attr(
+        target_pointer_width = "64",
+        deprecated(
+            since = "0.2.187",
+            note = "Use `rlimit` instead. The definitions are equivalent."
+        )
+    )]
     pub struct rlimit64 {
         pub rlim_cur: rlim64_t,
         pub rlim_max: rlim64_t,
@@ -1011,6 +1099,13 @@ s! {
         pub l_pid: __pid_t,
     }
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `flock` instead. The definitions are equivalent."
+        )
+    )]
     pub struct flock64 {
         pub l_type: c_int,
         pub l_whence: c_int,
@@ -1032,6 +1127,10 @@ s! {
         __unused5: Padding<*mut c_void>,
     }
 
+    #[deprecated(
+        since = "0.2.187",
+        note = "Use `glob_t` instead. The definitions are equivalent."
+    )]
     pub struct glob64_t {
         pub gl_pathc: size_t,
         pub gl_pathv: *mut *mut c_char,
@@ -1300,7 +1399,15 @@ cfg_if! {
     }
 }
 
-pub const RLIM64_INFINITY: crate::rlim64_t = 9223372036854775807;
+#[cfg_attr(
+    gnu_file_offset_bits64,
+    deprecated(
+        since = "0.2.187",
+        note = "Use `RLIM_INFINITY` instead. Their definitions are equivalent."
+    )
+)]
+#[cfg_attr(target_pointer_width = "64", allow(deprecated))]
+pub const RLIM64_INFINITY: crate::rlim64_t = 0x7fffffffffffffff;
 pub const RLIM_SAVED_MAX: crate::rlim_t = RLIM_INFINITY;
 pub const RLIM_SAVED_CUR: crate::rlim_t = RLIM_INFINITY;
 pub const PRIO_MIN: c_int = -20;
@@ -3655,7 +3762,23 @@ extern "C" {
 
     pub fn dup3(oldfd: c_int, newfd: c_int, flags: c_int) -> c_int;
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `pread` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn pread64(fd: c_int, buf: *mut c_void, count: size_t, offset: off64_t) -> ssize_t;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `pwrite` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn pwrite64(fd: c_int, buf: *const c_void, count: size_t, offset: off64_t) -> ssize_t;
 
     pub fn readv(__fd: c_int, __iovec: *const crate::iovec, __count: c_int) -> ssize_t;
@@ -3676,8 +3799,24 @@ extern "C" {
         __offset: __off_t,
     ) -> ssize_t;
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `preadv` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn preadv64(fd: c_int, iov: *const crate::iovec, iovcnt: c_int, offset: off64_t)
         -> ssize_t;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `pwritev` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn pwritev64(
         fd: c_int,
         iov: *const crate::iovec,
@@ -3746,13 +3885,52 @@ extern "C" {
         oldattr: *mut crate::mq_attr,
     ) -> c_int;
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `lseek` instead. The definitions are equivalent."
+        )
+    )]
     pub fn lseek64(__fd: c_int, __offset: __off64_t, __whence: c_int) -> __off64_t;
 
     pub fn lseek(__fd: c_int, __offset: __off_t, __whence: c_int) -> __off_t;
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `fgetpos` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn fgetpos64(stream: *mut crate::FILE, ptr: *mut fpos64_t) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `fseeko` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn fseeko64(stream: *mut crate::FILE, offset: off64_t, whence: c_int) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `fsetpos` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn fsetpos64(stream: *mut crate::FILE, ptr: *const fpos64_t) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `ftello` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn ftello64(stream: *mut crate::FILE) -> off64_t;
 
     pub fn bind(__fd: c_int, __addr: *const sockaddr, __len: crate::socklen_t) -> c_int;
@@ -3786,6 +3964,14 @@ extern "C" {
 
     #[cfg_attr(gnu_file_offset_bits64, link_name = "sendfile64")]
     pub fn sendfile(out_fd: c_int, in_fd: c_int, offset: *mut off_t, count: size_t) -> ssize_t;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `sendfile` instead. Their definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn sendfile64(out_fd: c_int, in_fd: c_int, offset: *mut off64_t, count: size_t) -> ssize_t;
 
     pub fn shutdown(__fd: c_int, __how: c_int) -> c_int;
@@ -4127,9 +4313,23 @@ extern "C" {
     ) -> c_int;
 
     pub fn fstat(__fd: c_int, __buf: *mut stat) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `fstat` instead. The definitions are equivalent."
+        )
+    )]
     pub fn fstat64(__fd: c_int, __buf: *mut stat64) -> c_int;
 
     pub fn fstatat(__fd: c_int, __file: *const c_char, __buf: *mut stat, __flag: c_int) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `fstatat` instead. The definitions are equivalent."
+        )
+    )]
     pub fn fstatat64(
         __fd: c_int,
         __file: *const c_char,
@@ -4146,42 +4346,143 @@ extern "C" {
     ) -> c_int;
 
     pub fn ftruncate(__fd: c_int, __length: __off_t) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `ftruncate` instead. The definitions are equivalent."
+        )
+    )]
     pub fn ftruncate64(__fd: c_int, __length: __off64_t) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `truncate` instead. The definitions are equivalent."
+        )
+    )]
     pub fn truncate64(__file: *const c_char, __length: __off64_t) -> c_int;
 
     pub fn lstat(__file: *const c_char, __buf: *mut stat) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `lstat` instead. The definitions are equivalent."
+        )
+    )]
     pub fn lstat64(__file: *const c_char, __buf: *mut stat64) -> c_int;
 
     #[cfg_attr(gnu_file_offset_bits64, link_name = "statfs64")]
     pub fn statfs(path: *const c_char, buf: *mut statfs) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `fstatfs` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn statfs64(__file: *const c_char, __buf: *mut statfs64) -> c_int;
     #[cfg_attr(gnu_file_offset_bits64, link_name = "fstatfs64")]
     pub fn fstatfs(fd: c_int, buf: *mut statfs) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `fstatfs` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn fstatfs64(__fildes: c_int, __buf: *mut statfs64) -> c_int;
 
     pub fn statvfs(__file: *const c_char, __buf: *mut statvfs) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `statvfs` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn statvfs64(__file: *const c_char, __buf: *mut statvfs64) -> c_int;
     pub fn fstatvfs(__fildes: c_int, __buf: *mut statvfs) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `fstatvfs` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn fstatvfs64(__fildes: c_int, __buf: *mut statvfs64) -> c_int;
 
     pub fn open(__file: *const c_char, __oflag: c_int, ...) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `open` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn open64(__file: *const c_char, __oflag: c_int, ...) -> c_int;
 
     pub fn openat(__fd: c_int, __file: *const c_char, __oflag: c_int, ...) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `openat` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn openat64(__fd: c_int, __file: *const c_char, __oflag: c_int, ...) -> c_int;
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `fopen` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn fopen64(filename: *const c_char, mode: *const c_char) -> *mut crate::FILE;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `freopen` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn freopen64(
         filename: *const c_char,
         mode: *const c_char,
         file: *mut crate::FILE,
     ) -> *mut crate::FILE;
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `create` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn creat64(path: *const c_char, mode: mode_t) -> c_int;
 
     pub fn mkostemp(template: *mut c_char, flags: c_int) -> c_int;
     pub fn mkostemps(template: *mut c_char, suffixlen: c_int, flags: c_int) -> c_int;
     pub fn mkstemps(template: *mut c_char, suffixlen: c_int) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `tmpfile` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn tmpfile64() -> *mut crate::FILE;
 
     pub fn popen(command: *const c_char, mode: *const c_char) -> *mut crate::FILE;
@@ -4335,15 +4636,38 @@ extern "C" {
     pub fn faccessat(dirfd: c_int, pathname: *const c_char, mode: c_int, flags: c_int) -> c_int;
 
     pub fn stat(__file: *const c_char, __buf: *mut stat) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `stat` instead. The definitions are equivalent."
+        )
+    )]
     pub fn stat64(__file: *const c_char, __buf: *mut stat64) -> c_int;
 
     pub fn readdir(dirp: *mut crate::DIR) -> *mut crate::dirent;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `readdir` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn readdir64(dirp: *mut crate::DIR) -> *mut crate::dirent64;
     pub fn readdir_r(
         dirp: *mut crate::DIR,
         entry: *mut crate::dirent,
         result: *mut *mut crate::dirent,
     ) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `readdir_r` instead. The definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn readdir64_r(
         dirp: *mut crate::DIR,
         entry: *mut crate::dirent64,
@@ -4359,6 +4683,14 @@ extern "C" {
 
     pub fn __errno_location() -> *mut c_int;
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `mmap` instead. Their definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn mmap64(
         __addr: *mut c_void,
         __len: size_t,
@@ -4383,14 +4715,32 @@ extern "C" {
     pub fn syncfs(fd: c_int) -> c_int;
     pub fn fdatasync(fd: c_int) -> c_int;
 
+    #[deprecated(since = "0.2.187", note = "This routine doesn't exist upstream.")]
+    #[allow(deprecated)]
     pub fn fallocate64(fd: c_int, mode: c_int, offset: off64_t, len: off64_t) -> c_int;
     #[cfg_attr(gnu_file_offset_bits64, link_name = "posix_fallocate64")]
     pub fn posix_fallocate(fd: c_int, offset: off_t, len: off_t) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `glob` instead. Their definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn posix_fallocate64(fd: c_int, offset: off64_t, len: off64_t) -> c_int;
 
     #[cfg_attr(gnu_file_offset_bits64, link_name = "posix_fadvise64")]
     pub fn posix_fadvise(fd: c_int, offset: off_t, len: off_t, advise: c_int) -> c_int;
 
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `posix_fadvise` instead. Their definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn posix_fadvise64(fd: c_int, offset: off64_t, len: off64_t, advise: c_int) -> c_int;
 
     pub fn madvise(__addr: *mut c_void, __len: size_t, __advice: c_int) -> c_int;
@@ -4399,9 +4749,25 @@ extern "C" {
 
     #[cfg_attr(gnu_file_offset_bits64, link_name = "gerlimit64")]
     pub fn getrlimit(resource: crate::__rlimit_resource_t, rlim: *mut crate::rlimit) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `getrlimit` instead. Their definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn getrlimit64(resource: crate::__rlimit_resource_t, rlim: *mut crate::rlimit64) -> c_int;
     #[cfg_attr(gnu_file_offset_bits64, link_name = "serlimit64")]
     pub fn setrlimit(resource: crate::__rlimit_resource_t, rlim: *const crate::rlimit) -> c_int;
+    #[cfg_attr(
+        any(target_pointer_width = "64", gnu_file_offset_bits64),
+        deprecated(
+            since = "0.2.187",
+            note = "Use `setrlimit` instead. Their definitions are equivalent."
+        ),
+        allow(deprecated)
+    )]
     pub fn setrlimit64(resource: crate::__rlimit_resource_t, rlim: *const crate::rlimit64)
         -> c_int;
 
@@ -4506,12 +4872,22 @@ extern "C" {
     #[cfg_attr(gnu_file_offset_bits64, link_name = "globfree64")]
     pub fn globfree(pglob: *mut crate::glob_t);
 
+    #[deprecated(
+        since = "0.2.187",
+        note = "Use `glob` instead. Their definitions are equivalent."
+    )]
+    #[allow(deprecated)]
     pub fn glob64(
         pattern: *const c_char,
         flags: c_int,
         errfunc: Option<extern "C" fn(epath: *const c_char, errno: c_int) -> c_int>,
         pglob: *mut glob64_t,
     ) -> c_int;
+    #[deprecated(
+        since = "0.2.187",
+        note = "Use `glob` instead. Their definitions are equivalent."
+    )]
+    #[allow(deprecated)]
     pub fn globfree64(pglob: *mut glob64_t);
 
     pub fn getxattr(
