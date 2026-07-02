@@ -144,7 +144,7 @@ fn main() {
     }
 
     if target_env == "gnu"
-        && target_os == "linux"
+        && matches!(target_os.as_str(), "hurd" | "linux")
         && target_ptr_width == "32"
         && target_arch != "riscv32"
         && target_arch != "x86_64"

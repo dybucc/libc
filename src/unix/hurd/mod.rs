@@ -77,7 +77,18 @@ pub type wchar_t = c_int;
 pub type wint_t = c_uint;
 pub type gid_t = __gid_t;
 pub type uid_t = __uid_t;
-pub type off_t = __off_t;
+
+cfg_if! {
+    if #[cfg(any(
+        target_pointer_width = "64",
+        not(gnu_file_offset_bits64)
+    ))] {
+        pub type off_t = __off_t;
+    } else {
+        pub type off_t = __off64_t;
+    }
+}
+
 pub type off64_t = __off64_t;
 pub type useconds_t = __useconds_t;
 pub type pid_t = __pid_t;
@@ -230,6 +241,26 @@ extern_ty! {
     pub type timezone;
 }
 
+cfg_if! {
+    if #[cfg(not(gnu_file_offset_bits64))] {
+        const STAT__SPARE_SIZE: usize = {
+            if size_of::<__fsid_t>() == size_of::<c_int>() {
+                12
+            } else {
+                11
+            }
+        };
+    } else {
+        const STAT__SPARE_SIZE: usize = {
+            if size_of::<__fsid_t>() == size_of::<c_int>() {
+                9
+            } else {
+                8
+            }
+        };
+    }
+}
+
 // structs
 s! {
     pub struct ip_mreq {
@@ -350,7 +381,12 @@ s! {
     }
 
     pub struct dirent {
+        #[cfg(not(gnu_file_offset_bits64))]
         pub d_ino: __ino_t,
+
+        #[cfg(gnu_file_offset_bits64)]
+        pub d_ino: __ino64_t,
+
         pub d_reclen: c_ushort,
         pub d_type: c_uchar,
         pub d_namlen: c_uchar,
@@ -448,23 +484,41 @@ s! {
 
     pub struct stat {
         pub st_fstype: c_int,
-        pub st_dev: __fsid_t, /* Actually st_fsid */
+        pub st_fsid: __fsid_t,
+
+        #[cfg(gnu_file_offset_bits64)]
+        pub st_ino: __ino64_t,
+
+        #[cfg(not(gnu_file_offset_bits64))]
         pub st_ino: __ino_t,
+
         pub st_gen: c_uint,
         pub st_rdev: __dev_t,
         pub st_mode: __mode_t,
         pub st_nlink: __nlink_t,
         pub st_uid: __uid_t,
         pub st_gid: __gid_t,
+
+        #[cfg(gnu_file_offset_bits64)]
+        pub st_size: __off64_t,
+
+        #[cfg(not(gnu_file_offset_bits64))]
         pub st_size: __off_t,
+
         pub st_atim: crate::timespec,
         pub st_mtim: crate::timespec,
         pub st_ctim: crate::timespec,
         pub st_blksize: __blksize_t,
+
+        #[cfg(gnu_file_offset_bits64)]
+        pub st_blocks: __blkcnt64_t,
+
+        #[cfg(not(gnu_file_offset_bits64))]
         pub st_blocks: __blkcnt_t,
+
         pub st_author: __uid_t,
         pub st_flags: c_uint,
-        pub st_spare: [c_int; 11usize],
+        pub st_spare: [c_int; STAT__SPARE_SIZE],
     }
 
     pub struct stat64 {
@@ -485,7 +539,11 @@ s! {
         pub st_blocks: __blkcnt64_t,
         pub st_author: __uid_t,
         pub st_flags: c_uint,
-        pub st_spare: [c_int; 8usize],
+        pub st_spare: [c_int; if size_of::<__fsid_t>() == size_of::<c_int>() {
+            9
+        } else {
+            8
+        }],
     }
 
     pub struct statx {
@@ -521,14 +579,38 @@ s! {
     pub struct statfs {
         pub f_type: c_uint,
         pub f_bsize: c_ulong,
+
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_blocks: __fsblkcnt64_t,
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_bfree: __fsblkcnt64_t,
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_bavail: __fsblkcnt64_t,
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_files: __fsblkcnt64_t,
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_ffree: __fsblkcnt64_t,
+
+        #[cfg(not(gnu_file_offset_bits64))]
         pub f_blocks: __fsblkcnt_t,
+        #[cfg(not(gnu_file_offset_bits64))]
         pub f_bfree: __fsblkcnt_t,
+        #[cfg(not(gnu_file_offset_bits64))]
         pub f_bavail: __fsblkcnt_t,
+        #[cfg(not(gnu_file_offset_bits64))]
         pub f_files: __fsblkcnt_t,
+        #[cfg(not(gnu_file_offset_bits64))]
         pub f_ffree: __fsblkcnt_t,
+
         pub f_fsid: __fsid_t,
         pub f_namelen: c_ulong,
+
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_favail: __fsfilcnt64_t,
+
+        #[cfg(not(gnu_file_offset_bits64))]
         pub f_favail: __fsfilcnt_t,
+
         pub f_frsize: c_ulong,
         pub f_flag: c_ulong,
         pub f_spare: [c_uint; 3usize],
@@ -553,14 +635,38 @@ s! {
     pub struct statvfs {
         pub __f_type: c_uint,
         pub f_bsize: c_ulong,
+
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_blocks: __fsblkcnt64_t,
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_bfree: __fsblkcnt64_t,
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_bavail: __fsblkcnt64_t,
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_files: __fsblkcnt64_t,
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_ffree: __fsblkcnt64_t,
+
+        #[cfg(not(gnu_file_offset_bits64))]
         pub f_blocks: __fsblkcnt_t,
+        #[cfg(not(gnu_file_offset_bits64))]
         pub f_bfree: __fsblkcnt_t,
+        #[cfg(not(gnu_file_offset_bits64))]
         pub f_bavail: __fsblkcnt_t,
-        pub f_files: __fsfilcnt_t,
-        pub f_ffree: __fsfilcnt_t,
+        #[cfg(not(gnu_file_offset_bits64))]
+        pub f_files: __fsblkcnt_t,
+        #[cfg(not(gnu_file_offset_bits64))]
+        pub f_ffree: __fsblkcnt_t,
+
         pub f_fsid: __fsid_t,
         pub f_namemax: c_ulong,
+
+        #[cfg(gnu_file_offset_bits64)]
+        pub f_favail: __fsfilcnt64_t,
+
+        #[cfg(not(gnu_file_offset_bits64))]
         pub f_favail: __fsfilcnt_t,
+
         pub f_frsize: c_ulong,
         pub f_flag: c_ulong,
         pub f_spare: [c_uint; 3usize],
@@ -889,29 +995,26 @@ s! {
     }
 
     pub struct flock {
-        #[cfg(target_pointer_width = "32")]
         pub l_type: c_int,
-        #[cfg(target_pointer_width = "32")]
         pub l_whence: c_int,
-        #[cfg(target_pointer_width = "64")]
-        pub l_type: c_short,
-        #[cfg(target_pointer_width = "64")]
-        pub l_whence: c_short,
+
+        #[cfg(not(gnu_file_offset_bits64))]
         pub l_start: __off_t,
+        #[cfg(not(gnu_file_offset_bits64))]
         pub l_len: __off_t,
+
+        #[cfg(gnu_file_offset_bits64)]
+        pub l_start: __off64_t,
+        #[cfg(gnu_file_offset_bits64)]
+        pub l_len: __off64_t,
+
         pub l_pid: __pid_t,
     }
 
     pub struct flock64 {
-        #[cfg(target_pointer_width = "32")]
         pub l_type: c_int,
-        #[cfg(target_pointer_width = "32")]
         pub l_whence: c_int,
-        #[cfg(target_pointer_width = "64")]
-        pub l_type: c_short,
-        #[cfg(target_pointer_width = "64")]
-        pub l_whence: c_short,
-        pub l_start: __off_t,
+        pub l_start: __off64_t,
         pub l_len: __off64_t,
         pub l_pid: __pid_t,
     }
@@ -1189,7 +1292,14 @@ pub const __PTHREAD_SPIN_LOCK_INITIALIZER: c_int = 0;
 pub const PTHREAD_MUTEX_NORMAL: c_int = 0;
 
 // sys/resource.h
-pub const RLIM_INFINITY: crate::rlim_t = 2147483647;
+cfg_if! {
+    if #[cfg(gnu_file_offset_bits64)] {
+        pub const RLIM_INFINITY: crate::rlim64_t = 0x7fffffffffffffff;
+    } else {
+        pub const RLIM_INFINITY: crate::rlim_t = 0x7fffffff;
+    }
+}
+
 pub const RLIM64_INFINITY: crate::rlim64_t = 9223372036854775807;
 pub const RLIM_SAVED_MAX: crate::rlim_t = RLIM_INFINITY;
 pub const RLIM_SAVED_CUR: crate::rlim_t = RLIM_INFINITY;
@@ -3551,12 +3661,14 @@ extern "C" {
     pub fn readv(__fd: c_int, __iovec: *const crate::iovec, __count: c_int) -> ssize_t;
     pub fn writev(__fd: c_int, __iovec: *const crate::iovec, __count: c_int) -> ssize_t;
 
+    #[cfg_attr(gnu_file_offset_bits64, link_name = "preadv64")]
     pub fn preadv(
         __fd: c_int,
         __iovec: *const crate::iovec,
         __count: c_int,
         __offset: __off_t,
     ) -> ssize_t;
+    #[cfg_attr(gnu_file_offset_bits64, link_name = "pwritev64")]
     pub fn pwritev(
         __fd: c_int,
         __iovec: *const crate::iovec,
@@ -3672,6 +3784,7 @@ extern "C" {
         addrlen: *mut crate::socklen_t,
     ) -> ssize_t;
 
+    #[cfg_attr(gnu_file_offset_bits64, link_name = "sendfile64")]
     pub fn sendfile(out_fd: c_int, in_fd: c_int, offset: *mut off_t, count: size_t) -> ssize_t;
     pub fn sendfile64(out_fd: c_int, in_fd: c_int, offset: *mut off64_t, count: size_t) -> ssize_t;
 
@@ -4039,8 +4152,10 @@ extern "C" {
     pub fn lstat(__file: *const c_char, __buf: *mut stat) -> c_int;
     pub fn lstat64(__file: *const c_char, __buf: *mut stat64) -> c_int;
 
+    #[cfg_attr(gnu_file_offset_bits64, link_name = "statfs64")]
     pub fn statfs(path: *const c_char, buf: *mut statfs) -> c_int;
     pub fn statfs64(__file: *const c_char, __buf: *mut statfs64) -> c_int;
+    #[cfg_attr(gnu_file_offset_bits64, link_name = "fstatfs64")]
     pub fn fstatfs(fd: c_int, buf: *mut statfs) -> c_int;
     pub fn fstatfs64(__fildes: c_int, __buf: *mut statfs64) -> c_int;
 
@@ -4269,9 +4384,11 @@ extern "C" {
     pub fn fdatasync(fd: c_int) -> c_int;
 
     pub fn fallocate64(fd: c_int, mode: c_int, offset: off64_t, len: off64_t) -> c_int;
+    #[cfg_attr(gnu_file_offset_bits64, link_name = "posix_fallocate64")]
     pub fn posix_fallocate(fd: c_int, offset: off_t, len: off_t) -> c_int;
     pub fn posix_fallocate64(fd: c_int, offset: off64_t, len: off64_t) -> c_int;
 
+    #[cfg_attr(gnu_file_offset_bits64, link_name = "posix_fadvise64")]
     pub fn posix_fadvise(fd: c_int, offset: off_t, len: off_t, advise: c_int) -> c_int;
 
     pub fn posix_fadvise64(fd: c_int, offset: off64_t, len: off64_t, advise: c_int) -> c_int;
@@ -4280,8 +4397,10 @@ extern "C" {
 
     pub fn posix_madvise(addr: *mut c_void, len: size_t, advice: c_int) -> c_int;
 
+    #[cfg_attr(gnu_file_offset_bits64, link_name = "gerlimit64")]
     pub fn getrlimit(resource: crate::__rlimit_resource_t, rlim: *mut crate::rlimit) -> c_int;
     pub fn getrlimit64(resource: crate::__rlimit_resource_t, rlim: *mut crate::rlimit64) -> c_int;
+    #[cfg_attr(gnu_file_offset_bits64, link_name = "serlimit64")]
     pub fn setrlimit(resource: crate::__rlimit_resource_t, rlim: *const crate::rlimit) -> c_int;
     pub fn setrlimit64(resource: crate::__rlimit_resource_t, rlim: *const crate::rlimit64)
         -> c_int;
@@ -4377,12 +4496,14 @@ extern "C" {
 
     pub fn regfree(preg: *mut crate::regex_t);
 
+    #[cfg_attr(gnu_file_offset_bits64, link_name = "glob64")]
     pub fn glob(
         pattern: *const c_char,
         flags: c_int,
         errfunc: Option<extern "C" fn(epath: *const c_char, errno: c_int) -> c_int>,
         pglob: *mut crate::glob_t,
     ) -> c_int;
+    #[cfg_attr(gnu_file_offset_bits64, link_name = "globfree64")]
     pub fn globfree(pglob: *mut crate::glob_t);
 
     pub fn glob64(
