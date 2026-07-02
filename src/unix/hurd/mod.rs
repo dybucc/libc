@@ -3894,8 +3894,6 @@ extern "C" {
     )]
     pub fn lseek64(__fd: c_int, __offset: __off64_t, __whence: c_int) -> __off64_t;
 
-    pub fn lseek(__fd: c_int, __offset: __off_t, __whence: c_int) -> __off_t;
-
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4312,7 +4310,6 @@ extern "C" {
         old_value: *mut crate::itimerspec,
     ) -> c_int;
 
-    pub fn fstat(__fd: c_int, __buf: *mut stat) -> c_int;
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4322,7 +4319,6 @@ extern "C" {
     )]
     pub fn fstat64(__fd: c_int, __buf: *mut stat64) -> c_int;
 
-    pub fn fstatat(__fd: c_int, __file: *const c_char, __buf: *mut stat, __flag: c_int) -> c_int;
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4345,7 +4341,6 @@ extern "C" {
         statxbuf: *mut statx,
     ) -> c_int;
 
-    pub fn ftruncate(__fd: c_int, __length: __off_t) -> c_int;
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4363,7 +4358,6 @@ extern "C" {
     )]
     pub fn truncate64(__file: *const c_char, __length: __off64_t) -> c_int;
 
-    pub fn lstat(__file: *const c_char, __buf: *mut stat) -> c_int;
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4396,7 +4390,6 @@ extern "C" {
     )]
     pub fn fstatfs64(__fildes: c_int, __buf: *mut statfs64) -> c_int;
 
-    pub fn statvfs(__file: *const c_char, __buf: *mut statvfs) -> c_int;
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4406,7 +4399,6 @@ extern "C" {
         allow(deprecated)
     )]
     pub fn statvfs64(__file: *const c_char, __buf: *mut statvfs64) -> c_int;
-    pub fn fstatvfs(__fildes: c_int, __buf: *mut statvfs) -> c_int;
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4417,7 +4409,6 @@ extern "C" {
     )]
     pub fn fstatvfs64(__fildes: c_int, __buf: *mut statvfs64) -> c_int;
 
-    pub fn open(__file: *const c_char, __oflag: c_int, ...) -> c_int;
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4428,7 +4419,6 @@ extern "C" {
     )]
     pub fn open64(__file: *const c_char, __oflag: c_int, ...) -> c_int;
 
-    pub fn openat(__fd: c_int, __file: *const c_char, __oflag: c_int, ...) -> c_int;
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4635,7 +4625,6 @@ extern "C" {
 
     pub fn faccessat(dirfd: c_int, pathname: *const c_char, mode: c_int, flags: c_int) -> c_int;
 
-    pub fn stat(__file: *const c_char, __buf: *mut stat) -> c_int;
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4645,7 +4634,6 @@ extern "C" {
     )]
     pub fn stat64(__file: *const c_char, __buf: *mut stat64) -> c_int;
 
-    pub fn readdir(dirp: *mut crate::DIR) -> *mut crate::dirent;
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4655,11 +4643,6 @@ extern "C" {
         allow(deprecated)
     )]
     pub fn readdir64(dirp: *mut crate::DIR) -> *mut crate::dirent64;
-    pub fn readdir_r(
-        dirp: *mut crate::DIR,
-        entry: *mut crate::dirent,
-        result: *mut *mut crate::dirent,
-    ) -> c_int;
     #[cfg_attr(
         any(target_pointer_width = "64", gnu_file_offset_bits64),
         deprecated(
@@ -4678,7 +4661,6 @@ extern "C" {
 
     pub fn dirfd(dirp: *mut crate::DIR) -> c_int;
 
-    #[link_name = "__xpg_strerror_r"]
     pub fn strerror_r(__errnum: c_int, __buf: *mut c_char, __buflen: size_t) -> c_int;
 
     pub fn __errno_location() -> *mut c_int;
