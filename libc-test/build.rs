@@ -1,5 +1,6 @@
 #![allow(clippy::match_like_matches_macro)]
 
+use std::collections::HashSet;
 use std::env::VarError;
 use std::fs::File;
 use std::io::{
@@ -73,7 +74,14 @@ fn do_ctest() {
         t if t.contains("apple") => test_apple(t),
         t if t.contains("dragonfly") => test_dragonflybsd(t),
         t if t.contains("emscripten") => test_emscripten(t),
-        t if t.contains("freebsd") => test_freebsd(t),
+        t if t.contains("freebsd") => {
+            // FIXME(1.0,remove): leave only one test once it's clear which
+            // interface we'll keep.
+            println!("cargo:warning=if_mib testing");
+            test_freebsd(t, NetHeader::IfMib);
+            println!("cargo:warning=netlink testing");
+            test_freebsd(t, NetHeader::Netlink);
+        }
         t if t.contains("haiku") => test_haiku(t),
         t if t.contains("l4re") => test_linux(t),
         t if t.contains("linux") => test_linux(t),
@@ -125,6 +133,12 @@ fn do_semver() {
     let os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     let target_env = env::var("CARGO_CFG_TARGET_ENV").unwrap();
+    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
+    let should_net = target_os == "freebsd";
+
+    if should_net {
+        LazyLock::force(&FREEBSD_NETLINK);
+    }
 
     // `libc-test/semver` dir.
     let mut semver_root = PathBuf::from("semver");
@@ -137,26 +151,31 @@ fn do_semver() {
     // NOTE: AIX and L4Re do not include the unix file because there are
     // definitions missing on these systems. It is easier to maintain separate
     // files for them.
-    if family != os && !matches!(os.as_str(), "android" | "aix" | "l4re") && os != "vxworks" {
-        process_semver_file(&mut output, &mut semver_root, &family);
+    if family != os && !matches!(os.as_str(), "android" | "aix" | "l4re" | "vxworks") {
+        process_semver_file(&mut output, &mut semver_root, &family, should_net);
     }
     // We don't do semver for unknown targets.
     if vendor != "unknown" {
-        process_semver_file(&mut output, &mut semver_root, &vendor);
+        process_semver_file(&mut output, &mut semver_root, &vendor, should_net);
     }
-    process_semver_file(&mut output, &mut semver_root, &os);
+    process_semver_file(&mut output, &mut semver_root, &os, should_net);
     let os_arch = format!("{os}-{arch}");
-    process_semver_file(&mut output, &mut semver_root, &os_arch);
+    process_semver_file(&mut output, &mut semver_root, &os_arch, should_net);
     if !target_env.is_empty() {
         let os_env = format!("{os}-{target_env}");
-        process_semver_file(&mut output, &mut semver_root, &os_env);
+        process_semver_file(&mut output, &mut semver_root, &os_env, should_net);
 
         let os_env_arch = format!("{os}-{target_env}-{arch}");
-        process_semver_file(&mut output, &mut semver_root, &os_env_arch);
+        process_semver_file(&mut output, &mut semver_root, &os_env_arch, should_net);
     }
 }
 
-fn process_semver_file<W: Write, P: AsRef<Path>>(output: &mut W, path: &mut PathBuf, file: P) {
+fn process_semver_file<W: Write, P: AsRef<Path>>(
+    output: &mut W,
+    path: &mut PathBuf,
+    file: P,
+    should_net: bool,
+) {
     // NOTE: `path` is reused between calls, so always remove the file again.
     path.push(file);
     path.set_extension("txt");
@@ -179,6 +198,13 @@ fn process_semver_file<W: Write, P: AsRef<Path>>(output: &mut W, path: &mut Path
         match line.first() {
             // Ignore comments and empty lines.
             Some(b'#') | None => continue,
+            _ if should_net && FREEBSD_NETLINK.contains(line.as_slice()) => {
+                // [SAFETY]: the line was sourced from the file as a string and
+                // got converted to a byte vector. This is just a roundtrip.
+                let line = unsafe { str::from_utf8_unchecked(line.as_slice()) };
+                let path = std::format_args!("netlink::netlink::{}", line);
+                std::writeln!(output, "{}{},", "    ", path).unwrap();
+            }
             _ => {
                 output.write_all(b"    ").unwrap();
                 output.write_all(&line).unwrap();
@@ -190,11 +216,76 @@ fn process_semver_file<W: Write, P: AsRef<Path>>(output: &mut W, path: &mut Path
     path.pop();
 }
 
+static FREEBSD_NETLINK: LazyLock<HashSet<&[u8]>> = LazyLock::new(|| {
+    HashSet::from([
+        b"NETLINK_ADD_MEMBERSHIP".as_slice(),
+        b"NETLINK_AUDIT".as_slice(),
+        b"NETLINK_BROADCAST_ERROR".as_slice(),
+        b"NETLINK_CAP_ACK".as_slice(),
+        b"NETLINK_CONNECTOR".as_slice(),
+        b"NETLINK_DNRTMSG".as_slice(),
+        b"NETLINK_DROP_MEMBERSHIP".as_slice(),
+        b"NETLINK_EXT_ACK".as_slice(),
+        b"NETLINK_FIB_LOOKUP".as_slice(),
+        b"NETLINK_FIREWALL".as_slice(),
+        b"NETLINK_GENERIC".as_slice(),
+        b"NETLINK_GET_STRICT_CHK".as_slice(),
+        b"NETLINK_IP6_FW".as_slice(),
+        b"NETLINK_ISCSI".as_slice(),
+        b"NETLINK_KOBJECT_UEVENT".as_slice(),
+        b"NETLINK_LISTEN_ALL_NSID".as_slice(),
+        b"NETLINK_LIST_MEMBERSHIPS".as_slice(),
+        b"NETLINK_NETFILTER".as_slice(),
+        b"NETLINK_NFLOG".as_slice(),
+        b"NETLINK_NO_ENOBUFS".as_slice(),
+        b"NETLINK_PKTINFO".as_slice(),
+        b"NETLINK_ROUTE".as_slice(),
+        b"NETLINK_RX_RING".as_slice(),
+        b"NETLINK_SELINUX".as_slice(),
+        b"NETLINK_SOCK_DIAG".as_slice(),
+        b"NETLINK_TX_RING".as_slice(),
+        b"NETLINK_UNUSED".as_slice(),
+        b"NETLINK_USERSOCK".as_slice(),
+        b"NETLINK_XFRM".as_slice(),
+        b"NLMSG_ALIGNTO".as_slice(),
+        b"NLMSG_DONE".as_slice(),
+        b"NLMSG_ERROR".as_slice(),
+        b"NLMSG_NOOP".as_slice(),
+        b"NLMSG_OVERRUN".as_slice(),
+        b"NLM_F_ACK".as_slice(),
+        b"NLM_F_ACK_TLVS".as_slice(),
+        b"NLM_F_APPEND".as_slice(),
+        b"NLM_F_ATOMIC".as_slice(),
+        b"NLM_F_CAPPED".as_slice(),
+        b"NLM_F_CREATE".as_slice(),
+        b"NLM_F_DUMP".as_slice(),
+        b"NLM_F_DUMP_FILTERED".as_slice(),
+        b"NLM_F_DUMP_INTR".as_slice(),
+        b"NLM_F_ECHO".as_slice(),
+        b"NLM_F_EXCL".as_slice(),
+        b"NLM_F_MATCH".as_slice(),
+        b"NLM_F_MULTI".as_slice(),
+        b"NLM_F_NONREC".as_slice(),
+        b"NLM_F_REPLACE".as_slice(),
+        b"NLM_F_REQUEST".as_slice(),
+        b"NLM_F_ROOT".as_slice(),
+        b"NL_ITEM_ALIGN_SIZE".as_slice(),
+        b"SOL_NETLINK".as_slice(),
+    ])
+});
+
 fn main() {
     // Avoid unnecessary re-building.
     println!("cargo:rerun-if-changed=build.rs");
     // Ensure version checking works, even if we don't use it.
     LazyLock::force(&VERSIONS);
+
+    // [NOTE]: this is only used by FreeBSD targets whose ctest-generated tests
+    // need to take into account the `cfg` used in the file to which we
+    // `include!` the bindings. But that file is used by all targets, so they
+    // all need to at least recognize the `cfg`, even if they don't use it.
+    // [FIXME]: remove once we decide which interface to keep (post-1.0.)
+    println!("cargo::rustc-check-cfg=cfg(freebsd_netlink)");
 
     do_cc();
     do_ctest();
@@ -2545,7 +2636,7 @@ fn test_android(target: &str) {
     test_linux_like_apis(target);
 }
 
-fn test_freebsd(target: &str) {
+fn test_freebsd(target: &str, which_net: NetHeader) {
     assert!(target.contains("freebsd"));
     let mut cfg = ctest_cfg();
 
@@ -2627,7 +2718,7 @@ fn test_freebsd(target: &str) {
         "net/if.h",
         "net/if_arp.h",
         "net/if_dl.h",
-        "net/if_mib.h",
+        (matches!(which_net, NetHeader::IfMib), "net/if_mib.h"),
         "net/route.h",
         "netdb.h",
         "netinet/ip.h",
@@ -2636,6 +2727,14 @@ fn test_freebsd(target: &str) {
         "netinet/tcp.h",
         "netinet/udp.h",
         "netinet6/in6_var.h",
+        (
+            matches!(which_net, NetHeader::Netlink) && freebsd13,
+            "netlink/netlink.h"
+        ),
+        (
+            matches!(which_net, NetHeader::Netlink) && freebsd13,
+            "netlink/netlink_generic.h"
+        ),
         "poll.h",
         "pthread.h",
         "pthread_np.h",
@@ -2877,6 +2976,133 @@ fn test_freebsd(target: &str) {
             // Added in FreeBSD 13.0 (r367776 and r367287)
             "SCM_CREDS2" | "LOCAL_CREDS_PERSISTENT" if Some(13) > freebsd_ver => true,
 
+            // Added in FreeBSD 13.2
+            "AF_NETLINK"
+            | "PF_NETLINK"
+            | "SOL_NETLINK"
+            | "NETLINK_ADD_MEMBERSHIP"
+            | "NETLINK_DROP_MEMBERSHIP"
+            | "NETLINK_PKTINFO"
+            | "NETLINK_BROADCAST_ERROR"
+            | "NETLINK_NO_ENOBUFS"
+            | "NETLINK_RX_RING"
+            | "NETLINK_TX_RING"
+            | "NETLINK_LISTEN_ALL_NSID"
+            | "NETLINK_LIST_MEMBERSHIPS"
+            | "NETLINK_CAP_ACK"
+            | "NETLINK_EXT_ACK"
+            | "NETLINK_GET_STRICT_CHK"
+            | "NLM_F_REQUEST"
+            | "NLM_F_MULTI"
+            | "NLM_F_ACK"
+            | "NLM_F_ECHO"
+            | "NLM_F_DUMP_INTR"
+            | "NLM_F_DUMP_FILTERED"
+            | "NLM_F_ROOT"
+            | "NLM_F_MATCH"
+            | "NLM_F_ATOMIC"
+            | "NLM_F_DUMP"
+            | "NLM_F_REPLACE"
+            | "NLM_F_EXCL"
+            | "NLM_F_CREATE"
+            | "NLM_F_APPEND"
+            | "NLM_F_NONREC"
+            | "NLM_F_CAPPED"
+            | "NLM_F_ACK_TLVS"
+            | "NLMSG_NOOP"
+            | "NLMSG_ERROR"
+            | "NLMSG_DONE"
+            | "NLMSG_OVERRUN"
+            | "NETLINK_ROUTE"
+            | "NETLINK_UNUSED"
+            | "NETLINK_USERSOCK"
+            | "NETLINK_FIREWALL"
+            | "NETLINK_SOCK_DIAG"
+            | "NETLINK_NFLOG"
+            | "NETLINK_XFRM"
+            | "NETLINK_SELINUX"
+            | "NETLINK_ISCSI"
+            | "NETLINK_AUDIT"
+            | "NETLINK_FIB_LOOKUP"
+            | "NETLINK_CONNECTOR"
+            | "NETLINK_NETFILTER"
+            | "NETLINK_IP6_FW"
+            | "NETLINK_DNRTMSG"
+            | "NETLINK_KOBJECT_UEVENT"
+            | "NETLINK_GENERIC"
+            | "NL_ITEM_ALIGN_SIZE"
+            | "NLMSG_ALIGNTO"
+            | "CTRL_CMD_UNSPEC"
+            | "CTRL_CMD_NEWFAMILY"
+            | "CTRL_CMD_DELFAMILY"
+            | "CTRL_CMD_GETFAMILY"
+            | "CTRL_CMD_NEWOPS"
+            | "CTRL_CMD_DELOPS"
+            | "CTRL_CMD_GETOPS"
+            | "CTRL_CMD_NEWMCAST_GRP"
+            | "CTRL_CMD_DELMCAST_GRP"
+            | "CTRL_CMD_GETMCAST_GRP"
+            | "CTRL_CMD_GETPOLICY"
+            | "CTRL_ATTR_UNSPEC"
+            | "CTRL_ATTR_FAMILY_ID"
+            | "CTRL_ATTR_FAMILY_NAME"
+            | "CTRL_ATTR_VERSION"
+            | "CTRL_ATTR_HDRSIZE"
+            | "CTRL_ATTR_MAXATTR"
+            | "CTRL_ATTR_OPS"
+            | "CTRL_ATTR_MCAST_GROUPS"
+            | "CTRL_ATTR_POLICY"
+            | "CTRL_ATTR_OP_POLICY"
+            | "CTRL_ATTR_OP"
+            | "CTRL_ATTR_MCAST_GRP_UNSPEC"
+            | "CTRL_ATTR_MCAST_GRP_NAME"
+            | "CTRL_ATTR_MCAST_GRP_ID"
+                if matches!(which_net, NetHeader::IfMib) || Some(13) > freebsd_ver =>
+            {
+                true
+            }
+
+            // Skip all `net/if_mib.h` interfaces when testing against the
+            // `netlink/netlink.h` interfaces.
+            // FIXME(1.0,remove): get rid of this once we decide which interface
+            // to keep
+            "IFMIB_SYSTEM"
+            | "IFMIB_SYSTEM"
+            | "IFMIB_IFDATA"
+            | "IFDATA_GENERAL"
+            | "IFDATA_LINKSPECIFIC"
+            | "IFDATA_DRIVERNAME"
+            | "IFMIB_IFCOUNT"
+            | "NETLINK_GENERIC"
+            | "DOT3COMPLIANCE_STATS"
+            | "DOT3COMPLIANCE_COLLS"
+            | "dot3ChipSetAMD7990"
+            | "dot3ChipSetAMD79900"
+            | "dot3ChipSetAMD79C940"
+            | "dot3ChipSetIntel82586"
+            | "dot3ChipSetIntel82596"
+            | "dot3ChipSetIntel82557"
+            | "dot3ChipSetNational8390"
+            | "dot3ChipSetNationalSonic"
+            | "dot3ChipSetFujitsu86950"
+            | "dot3ChipSetDigitalDC21040"
+            | "dot3ChipSetDigitalDC21140"
+            | "dot3ChipSetDigitalDC21041"
+            | "dot3ChipSetDigitalDC21140A"
+            | "dot3ChipSetDigitalDC21142"
+            | "dot3ChipSetWesternDigital83C690"
+            | "dot3ChipSetWesternDigital83C790"
+            | "dot3VendorAMD"
+            | "dot3VendorIntel"
+            | "dot3VendorNational"
+            | "dot3VendorFujitsu"
+            | "dot3VendorDigital"
+            | "dot3VendorWesternDigital"
+                if matches!(which_net, NetHeader::Netlink) =>
+            {
+                true
+            }
+
             // Added in FreeBSD 14
             "SPACECTL_DEALLOC" if Some(14) > freebsd_ver => true,
 
@@ -3054,6 +3280,9 @@ fn test_freebsd(target: &str) {
             "kvm_t" => true,
             // `eventfd(2)` and things come with it are added in FreeBSD 13
             "eventfd_t" if Some(13) > freebsd_ver => true,
+            // FIXME(1.0,remove): get rid of this once we've decided which
+            // interface to expose.
+            "dot3Vendors" if matches!(which_net, NetHeader::Netlink) => true,
 
             _ => false,
         }
@@ -3076,6 +3305,19 @@ fn test_freebsd(target: &str) {
             "sockcred2" if Some(13) > freebsd_ver => true,
             // `shm_largepage_conf` was introduced in FreeBSD 13.
             "shm_largepage_conf" if Some(13) > freebsd_ver => true,
+
+            // `sockaddr_nl` introduced in FreeBSD 13.2
+            // FIXME(1.0,remove): get rid of the `matches!` once we decide which
+            // interface to keep.
+            "sockaddr_nl" if matches!(which_net, NetHeader::IfMib) || Some(13) > freebsd_ver => {
+                true
+            }
+
+            // If testing the `neltink/netlink.h` interfaces, we must skip
+            // everything from the `net/if_mib.h` interfaces.
+            // FIXME(1.0,remove): get rid of this once we decide which interface
+            // to keep.
+            "ifmibdata" | "ifmib_iso_8802_3" if matches!(which_net, NetHeader::Netlink) => true,
 
             // Those are private types
             "memory_type" => true,
@@ -3245,6 +3487,10 @@ fn test_freebsd(target: &str) {
     }
 
     cfg.alias_is_c_enum(|ty| ty == "dot3Vendors");
+
+    if matches!(which_net, NetHeader::Netlink) {
+        println!("cargo::rustc-cfg=freebsd_netlink");
+    }
 
     ctest::generate_test(&mut cfg, "../src/lib.rs", "ctest_output.rs").unwrap();
 }
@@ -6388,6 +6634,18 @@ fn test_qurt(target: &str) {
     cfg.skip_roundtrip(|_| true);
 
     ctest::generate_test(&mut cfg, "../src/lib.rs", "ctest_output.rs").unwrap();
+}
+
+/// Which of the network interfaces to test for in the FreeBSD tests.
+/// Used to generate a different set of tests depending on which network
+/// bindings we're testing.
+// FIXME(1.0,remove): get rid of this once there's only one interface exposed by
+// default.
+#[repr(u8)]
+#[derive(Clone, Copy)]
+enum NetHeader {
+    IfMib,
+    Netlink,
 }
 
 /// Platform versions for checking expected support. These are extracted from headers so should be
