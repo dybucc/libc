@@ -201,25 +201,109 @@ s! {
         __glibc_reserved5: Padding<c_ulong>,
     }
 
-    pub struct siginfo_t {
-        pub si_signo: c_int,
-        pub si_errno: c_int,
-        pub si_code: c_int,
-        #[doc(hidden)]
-        #[deprecated(
-            since = "0.2.54",
-            note = "Please leave a comment on \
-                  https://github.com/rust-lang/libc/pull/1316 if you're using \
-                  this field"
-        )]
-        pub _pad: [c_int; 29],
-        _align: [usize; 0],
-    }
-
     pub struct stack_t {
         pub ss_sp: *mut c_void,
         pub ss_flags: c_int,
         pub ss_size: size_t,
+    }
+}
+
+s_no_extra_traits! {
+    pub struct siginfo_t {
+        pub si_signo: c_int,
+        pub si_errno: c_int,
+        pub si_code: c_int,
+        _si_fields: __c_anonymous_siginfo_t__si_fields,
+    }
+
+    union __c_anonymous_siginfo_t__si_fields {
+        _pad: [c_int; 128 / size_of::<c_int>() - 3],
+        _kill: __c_anonymous__si_fields__kill,
+        _timer: __c_anonymous__si_fields__timer,
+        _rt: __c_anonymous__si_fields__rt,
+        _sigchld: __c_anonymous__si_fields__sigchld,
+        _sigfault: __c_anonymous__si_fields__sigfault,
+        _sigpoll: __c_anonymous__si_fields__sigpoll,
+        _sigsys: __c_anonymous__si_fields__sigsys,
+    }
+
+    struct __c_anonymous__si_fields__kill {
+        si_pid: crate::pid_t,
+        si_uid: crate::uid_t,
+    }
+
+    struct __c_anonymous__si_fields__timer {
+        si_tid: c_int,
+        si_overrun: c_int,
+        si_sigval: crate::sigval,
+    }
+
+    struct __c_anonymous__si_fields__rt {
+        si_pid: crate::pid_t,
+        si_uid: crate::uid_t,
+        si_sigval: crate::sigval,
+    }
+
+    struct __c_anonymous__si_fields__sigchld {
+        si_pid: crate::pid_t,
+        si_uid: crate::uid_t,
+        si_status: c_int,
+        si_utime: crate::clock_t,
+        si_stime: crate::clock_t,
+    }
+
+    struct __c_anonymous__si_fields__sigfault {
+        si_addr: *mut c_void,
+        si_addr_lsb: c_short,
+        _bounds: __c_anonymous__sigfault__bounds,
+    }
+
+    struct __c_anonymous__si_fields__sigpoll {
+        si_band: c_long,
+        si_fd: c_int,
+    }
+
+    struct __c_anonymous__si_fields__sigsys {
+        _call_addr: *mut c_void,
+        _syscall: c_int,
+        _arch: c_uint,
+    }
+
+    union __c_anonymous__sigfault__bounds {
+        _addr_bnd: __c_anonymous__bounds__addr_bnd,
+        _pkey: u32,
+    }
+
+    struct __c_anonymous__bounds__addr_bnd {
+        _lower: *mut c_void,
+        _upper: *mut c_void,
+    }
+}
+
+cfg_if! {
+    if #[cfg(feature = "extra_traits")] {
+        impl PartialEq for siginfo_t {
+            fn eq(&self, other: &Self) -> bool {
+                let Self { si_signo, si_errno, si_code, .. } = self;
+                let Self {
+                    si_signo: osi_signo,
+                    si_errno: osi_errno,
+                    si_code: osi_code,
+                    ..
+                } = other;
+                (si_signo, si_errno, si_code) == (osi_signo, osi_errno, osi_code)
+            }
+        }
+
+        impl Eq for siginfo_t {}
+
+        impl core::hash::Hash for siginfo_t {
+            fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+                self.si_signo.hash(state);
+                self.si_errno.hash(state);
+                self.si_code.hash(state);
+            }
+        }
     }
 }
 
