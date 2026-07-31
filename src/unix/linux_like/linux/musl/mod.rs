@@ -150,27 +150,6 @@ s! {
         pub sa_restorer: Option<extern "C" fn()>,
     }
 
-    // `mips*` targets swap the `s_errno` and `s_code` fields otherwise this struct is
-    // target-agnostic (see https://www.openwall.com/lists/musl/2016/01/27/1/2)
-    //
-    // FIXME(union): C implementation uses unions
-    pub struct siginfo_t {
-        pub si_signo: c_int,
-        #[cfg(not(any(target_arch = "mips", target_arch = "mips64")))]
-        pub si_errno: c_int,
-        pub si_code: c_int,
-        #[cfg(any(target_arch = "mips", target_arch = "mips64"))]
-        pub si_errno: c_int,
-        #[doc(hidden)]
-        #[deprecated(
-            since = "0.2.54",
-            note = "Please leave a comment on https://github.com/rust-lang/libc/pull/1316 \
-                  if you're using this field"
-        )]
-        pub _pad: [c_int; 29],
-        _align: [usize; 0],
-    }
-
     pub struct statvfs {
         pub f_bsize: c_ulong,
         pub f_frsize: c_ulong,
@@ -482,6 +461,84 @@ s_no_extra_traits! {
         __next: *mut c_void,
         __prev: *mut c_void,
         __dummy4: [c_char; 32 - 2 * size_of::<*const ()>()],
+    }
+
+    // `mips*` targets swap the `s_errno` and `s_code` fields otherwise this struct is
+    // target-agnostic (see https://www.openwall.com/lists/musl/2016/01/27/1/2)
+    pub struct siginfo_t {
+        pub si_signo: c_int,
+        #[cfg(not(any(target_arch = "mips", target_arch = "mips64")))]
+        pub si_errno: c_int,
+        pub si_code: c_int,
+        #[cfg(any(target_arch = "mips", target_arch = "mips64"))]
+        pub si_errno: c_int,
+        __si_fields: __c_anonymous_siginfo_t___si_fields,
+    }
+
+    union __c_anonymous_siginfo_t___si_fields {
+        __pad: [c_char; 128 - 2 * size_of::<c_int>() - size_of::<c_long>()],
+        __si_common: __c_anonymous___si_fields___si_common,
+        __sigfault: __c_anonymous___si_fields___sigfault,
+        __sigpoll: __c_anonymous___si_fields___sigpoll,
+        __sigsys: __c_anonymous___si_fields___sigsys,
+    }
+
+    struct __c_anonymous___si_fields___si_common {
+        __first: __c_anonymous___si_common___first,
+        __second: __c_anonymous___si_common___second,
+    }
+
+    struct __c_anonymous___si_fields___sigfault {
+        si_addr: *mut c_void,
+        si_addr_lsb: c_short,
+        __first: __c_anonymous___sigfault___first,
+    }
+
+    struct __c_anonymous___si_fields___sigpoll {
+        si_band: c_long,
+        si_fd: c_int,
+    }
+
+    struct __c_anonymous___si_fields___sigsys {
+        si_call_addr: *mut c_void,
+        si_syscall: c_int,
+        si_arch: c_uint,
+    }
+
+    struct __c_anonymous___si_common___first {
+        __piduid: __c_anonymous___first___piduid,
+        __timer: __c_anonymous___first___timer,
+    }
+
+    struct __c_anonymous___si_common___second {
+        __si_value: crate::sigval,
+        __sigchld: __c_anonymous___second___sigchld,
+    }
+
+    struct __c_anonymous___sigfault___first {
+        __addr_band: __c_anonymous___first___addr_band,
+        __si_pkey: c_uint,
+    }
+
+    struct __c_anonymous___first___piduid {
+        __si_pid: crate::pid_t,
+        __si_uid: crate::uid_t,
+    }
+
+    struct __c_anonymous___first___timer {
+        __si_timerid: c_int,
+        __si_overrun: c_int,
+    }
+
+    struct __c_anonymous___second___sigchld {
+        __si_status: c_int,
+        __si_utime: clock_t,
+        __si_stime: clock_t,
+    }
+
+    struct __c_anonymous___first___addr_band {
+        __si_lower: *mut c_void,
+        __si_upper: *mut c_void,
     }
 }
 
