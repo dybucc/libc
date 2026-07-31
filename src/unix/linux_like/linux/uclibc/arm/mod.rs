@@ -179,13 +179,6 @@ s! {
         pub c_ospeed: crate::speed_t,
     }
 
-    pub struct siginfo_t {
-        pub si_signo: c_int,
-        pub si_errno: c_int,
-        pub si_code: c_int,
-        pub _pad: [c_int; 29],
-    }
-
     pub struct stack_t {
         pub ss_sp: *mut c_void,
         pub ss_flags: c_int,
@@ -247,6 +240,87 @@ s! {
         __size: [c_char; 16],
         #[cfg(target_pointer_width = "64")]
         __size: [c_char; 32],
+    }
+}
+
+s_no_extra_traits! {
+    pub struct siginfo_t {
+        pub si_signo: c_int,
+        pub si_errno: c_int,
+        pub si_code: c_int,
+        _si_fields: __c_anonymous_siginfo_t__si_fields,
+    }
+
+    union __c_anonymous_siginfo_t__si_fields {
+        _pad: Padding<[c_int; 128 / size_of::<c_int>() - 3]>,
+        _kill: __c_anonymous__si_fields__kill,
+        _timer: __c_anonymous__si_fields__timer,
+        _rt: __c_anonymous__si_fields__rt,
+        _sigchld: __c_anonymous__si_fields__sigchld,
+        _sigfault: __c_anonymous__si_fields__sigfault,
+        _sigpoll: __c_anonymous__si_fields__sigpoll,
+        _sigsys: __c_anonymous__si_fields__sigsys,
+    }
+
+    struct __c_anonymous__si_fields__kill {
+        si_pid: crate::pid_t,
+        si_uid: crate::uid_t,
+    }
+
+    struct __c_anonymous__si_fields__timer {
+        si_tid: c_int,
+        si_overrun: c_int,
+        si_sigval: crate::sigval,
+    }
+
+    struct __c_anonymous__si_fields__rt {
+        si_pid: crate::pid_t,
+        si_uid: crate::uid_t,
+        si_sigval: crate::sigval,
+    }
+
+    struct __c_anonymous__si_fields__sigchld {
+        si_pid: crate::pid_t,
+        si_uid: crate::uid_t,
+        si_status: c_int,
+        si_utime: clock_t,
+        si_stime: clock_t,
+    }
+
+    struct __c_anonymous__si_fields__sigfault {
+        si_addr: *mut c_void,
+    }
+
+    struct __c_anonymous__si_fields__sigpoll {
+        si_band: c_long,
+        si_fd: c_int,
+    }
+
+    struct __c_anonymous__si_fields__sigsys {
+        _call_addr: *mut c_void,
+        _syscall: c_int,
+        _arch: c_uint,
+    }
+}
+
+cfg_if! {
+    if #[cfg(feature = "extra_traits")] {
+        impl PartialEq for siginfo_t {
+            fn eq(&self, other: &Self) -> bool {
+                (self.si_signo, self.si_code, self.si_errno)
+                    == (other.si_signo, other.si_code, other.si_errno)
+            }
+        }
+
+        impl Eq for siginfo_t {}
+
+        impl core::hash::Hash for siginfo_t {
+            fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+                self.si_signo.hash(state);
+                self.si_code.hash(state);
+                self.si_errno.hash(state);
+            }
+        }
     }
 }
 
