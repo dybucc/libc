@@ -5,7 +5,7 @@ use crate::{
 };
 
 pub type dev_t = u32;
-pub type wchar_t = i32;
+pub type wchar_t = c_int;
 pub type clock_t = u64;
 pub type ino_t = u64;
 pub type lwpid_t = i32;
