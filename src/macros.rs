@@ -162,8 +162,7 @@ macro_rules! s {
         s!(it: $(#[$attr])* $pub $t $i { $($field)* });
     )*);
 
-    (fin: $it:item) => ( $it );
-    (rec: $pub:vis $t:ident $i:ident { $($field:tt)* }) => (s! { fin:
+    (rec($(#[$attr:meta])*): $pub:vis $t:ident $i:ident { $($field:tt)* }) => (
         #[repr(C)]
         #[::core::prelude::v1::derive(
             ::core::clone::Clone,
@@ -175,9 +174,10 @@ macro_rules! s {
             ::core::prelude::v1::derive(::core::cmp::PartialEq, ::core::cmp::Eq, core::hash::Hash)
         )]
         #[allow(deprecated)]
+        $(#[$attr])*
         $pub $t $i { $($field)* }
-    });
-    (rec non_exhaustive: $pub:vis $t:ident $i:ident { $($field:tt)* }) => (s! { fin:
+    );
+    (rec_non_exhaustive($(#[$attr:meta])*): $pub:vis $t:ident $i:ident { $($field:tt)* }) => (
         #[repr(C)]
         #[::core::prelude::v1::derive(
             ::core::clone::Clone,
@@ -190,27 +190,27 @@ macro_rules! s {
         )]
         #[non_exhaustive]
         #[allow(deprecated)]
+        $(#[$attr])*
         $pub $t $i { $($field)* }
-    });
+    );
 
     (
-        rec: #[not_non_exhaustive] $(#[$attr:meta])*
+        rec($(#[$proc:meta])*): #[not_non_exhaustive] $(#[$attr:meta])*
         $pub:vis $t:ident $i:ident { $($field:tt)* }
-    ) => ( s! { rec non_exhaustive: $(#[$attr])* $pub $t $i { $($field)* } } );
+    ) => ( s! { rec_non_exhaustive($(#[$proc])*): $(#[$attr])* $pub $t $i { $($field)* } } );
 
     (
-        rec: #[$prev:meta] $(#[$attr:meta])*
+        rec($(#[$proc:meta])*): #[$prev:meta] $(#[$attr:meta])*
         $pub:vis $t:ident $i:ident { $($field:tt)* }
     ) =>(
-        #[$prev]
-        s! { rec: $(#[$attr])* $pub $t $i { $($field)* } }
+        s! { rec($(#[$proc])* #[$prev]): $(#[$attr])* $pub $t $i { $($field)* } }
     );
     (
-        rec non_exhaustive: #[$prev:meta] $(#[$attr:meta])*
+        rec_non_exhaustive($(#[$proc:meta])*): #[$prev:meta] $(#[$attr:meta])*
         $pub:vis $t:ident $i:ident { $($field:tt)* }
     ) => (
         #[$prev]
-        s! { rec: $(#[$attr])* $pub $t $i { $($field)* } }
+        s! { rec_non_exhaustive($(#[$proc])* #[$prev]): $(#[$attr])* $pub $t $i { $($field)* } }
     );
 
     (it: $(#[$attr:meta])* $pub:vis union $i:ident { $($field:tt)* }) => (
@@ -218,7 +218,7 @@ macro_rules! s {
     );
 
     (it: $(#[$attr:meta])* $pub:vis struct $i:ident { $($field:tt)* }) => (
-        s! { rec: $(#[$attr])* $pub struct $i { $($field)* } }
+        s! { rec(): $(#[$attr])* $pub struct $i { $($field)* } }
     );
 }
 
