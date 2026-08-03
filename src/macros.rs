@@ -156,17 +156,39 @@ macro_rules! prelude {
 /// make sense, and for unions.
 macro_rules! s {
     ($(
+        #[not_non_exhaustive]
         $(#[$attr:meta])*
         $pub:vis $t:ident $i:ident { $($field:tt)* }
     )*) => ($(
         s!(it: $(#[$attr])* $pub $t $i { $($field)* });
     )*);
 
-    (it: $(#[$attr:meta])* $pub:vis union $i:ident { $($field:tt)* }) => (
+    ($(
+        $(#[$attr:meta])*
+        #[not_non_exhaustive]
+        $pub:vis $t:ident $i:ident { $($field:tt)* }
+    )*) => ($(
+        s!(it: $(#[$attr])* $pub $t $i { $($field)* });
+    )*);
+
+    ($(
+        $(#[$attr:meta])*
+        $pub:vis $t:ident $i:ident { $($field:tt)* }
+    )*) => ($(
+        s!(it: $(#[$attr])* $pub $t $i { $($field)* });
+    )*);
+
+    (
+        it $(#[$non_exhaustive:meta])?: $(#[$attr:meta])*
+        $pub:vis union $i:ident { $($field:tt)* }
+    ) => (
         compile_error!("unions cannot derive extra traits, use s_no_extra_traits instead");
     );
 
-    (it: $(#[$attr:meta])* $pub:vis struct $i:ident { $($field:tt)* }) => (
+    (
+        it $(#[$non_exhaustive:meta])?:
+        $(#[$attr:meta])* $pub:vis struct $i:ident { $($field:tt)* }
+    ) => (
         #[repr(C)]
         #[::core::prelude::v1::derive(
             ::core::clone::Clone,
@@ -177,6 +199,7 @@ macro_rules! s {
             feature = "extra_traits",
             ::core::prelude::v1::derive(PartialEq, Eq, Hash)
         )]
+        $(#[$non_exhaustive])?
         #[allow(deprecated)]
         $(#[$attr])*
         $pub struct $i { $($field)* }
@@ -190,9 +213,32 @@ macro_rules! s {
 /// `repr` attribute via `$attr` as necessary.
 macro_rules! s_paren {
     ($(
+        #[not_non_exhaustive]
         $(#[$attr:meta])*
         $pub:vis struct $i:ident ( $($field:tt)* );
-    )*) => ($(
+    )*) => {$(
+        s_paren!(it: $pub struct $i ( $($field)* ));
+    )*};
+
+    ($(
+        $(#[$attr:meta])*
+        #[not_non_exhaustive]
+        $pub:vis struct $i:ident ( $($field:tt)* );
+    )*) => {$(
+        s_paren!(it: $pub struct $i ( $($field)* ));
+    )*};
+
+    ($(
+        $(#[$attr:meta])*
+        $pub:vis struct $i:ident ( $($field:tt)* );
+    )*) => {$(
+        s_paren!(it #[non_exhaustive]: $pub struct $i ( $($field)* ));
+    )*};
+
+    (
+        it $(#[$non_exhaustive:meta])?: $(#[$attr:meta])*
+        $pub:vis struct $i:ident ( $($field:tt)* );
+    ) => (
         #[::core::prelude::v1::derive(
             ::core::clone::Clone,
             ::core::marker::Copy,
@@ -202,9 +248,10 @@ macro_rules! s_paren {
             feature = "extra_traits",
             ::core::prelude::v1::derive(PartialEq, Eq, Hash)
         )]
+        $(#[$non_exhaustive])?
         $(#[$attr])*
         $pub struct $i ( $($field)* );
-    )*);
+    );
 }
 
 /// Implement `Clone`, `Copy`, and `Debug` for one or more structs/unions, but exclude `PartialEq`,
@@ -215,13 +262,29 @@ macro_rules! s_paren {
 /// Most structs will prefer to use [`s`].
 macro_rules! s_no_extra_traits {
     ($(
+        #[not_non_exhaustive]
+        $(#[$attr:meta])*
+        $pub:vis $t:ident $i:ident { $($field:tt)* }
+    )*) => {$(
+        s_no_extra_traits!(it: $(#[$attr])* $pub $t $i { $($field)* });
+    )*};
+
+    ($(
+        $(#[$attr:meta])*
+        #[not_non_exhaustive]
+        $pub:vis $t:ident $i:ident { $($field:tt)* }
+    )*) => {$(
+        s_no_extra_traits!(it: $(#[$attr])* $pub $t $i { $($field)* });
+    )*};
+
+    ($(
         $(#[$attr:meta])*
         $pub:vis $t:ident $i:ident { $($field:tt)* }
     )*) => ($(
-        s_no_extra_traits!(it: $(#[$attr])* $pub $t $i { $($field)* });
+        s_no_extra_traits!(it #[non_exhaustive]: $(#[$attr])* $pub $t $i { $($field)* });
     )*);
 
-    (it: $(#[$attr:meta])* $pub:vis union $i:ident { $($field:tt)* }) => (
+    (it $(#[$_:meta])?: $(#[$attr:meta])* $pub:vis union $i:ident { $($field:tt)* }) => (
         #[repr(C)]
         #[::core::prelude::v1::derive(
             ::core::clone::Clone,
@@ -238,13 +301,14 @@ macro_rules! s_no_extra_traits {
         }
     );
 
-    (it: $(#[$attr:meta])* $pub:vis struct $i:ident { $($field:tt)* }) => (
+    (it $(#[$non_exhaustive:meta])?: $(#[$attr:meta])* $pub:vis struct $i:ident { $($field:tt)* }) => (
         #[repr(C)]
         #[::core::prelude::v1::derive(
             ::core::clone::Clone,
             ::core::marker::Copy,
             ::core::fmt::Debug,
         )]
+        $(#[$non_exhaustive])?
         $(#[$attr])*
         $pub struct $i { $($field)* }
     );
