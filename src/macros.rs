@@ -156,39 +156,14 @@ macro_rules! prelude {
 /// make sense, and for unions.
 macro_rules! s {
     ($(
-        #[not_non_exhaustive]
         $(#[$attr:meta])*
         $pub:vis $t:ident $i:ident { $($field:tt)* }
     )*) => ($(
         s!(it: $(#[$attr])* $pub $t $i { $($field)* });
     )*);
 
-    ($(
-        $(#[$attr:meta])*
-        #[not_non_exhaustive]
-        $pub:vis $t:ident $i:ident { $($field:tt)* }
-    )*) => ($(
-        s!(it: $(#[$attr])* $pub $t $i { $($field)* });
-    )*);
-
-    ($(
-        $(#[$attr:meta])*
-        $pub:vis $t:ident $i:ident { $($field:tt)* }
-    )*) => ($(
-        s!(it: $(#[$attr])* $pub $t $i { $($field)* });
-    )*);
-
-    (
-        it $(#[$non_exhaustive:meta])?: $(#[$attr:meta])*
-        $pub:vis union $i:ident { $($field:tt)* }
-    ) => (
-        core::compile_error!("unions cannot derive extra traits, use s_no_extra_traits instead");
-    );
-
-    (
-        it $(#[$non_exhaustive:meta])?:
-        $(#[$attr:meta])* $pub:vis struct $i:ident { $($field:tt)* }
-    ) => (
+    (fin: $it:item) => ( $it );
+    (rec: $pub:vis $t:ident $i:ident { $($field:tt)* }) => (s! { fin:
         #[repr(C)]
         #[::core::prelude::v1::derive(
             ::core::clone::Clone,
@@ -197,12 +172,53 @@ macro_rules! s {
         )]
         #[cfg_attr(
             feature = "extra_traits",
-            ::core::prelude::v1::derive(PartialEq, Eq, Hash)
+            ::core::prelude::v1::derive(::core::cmp::PartialEq, ::core::cmp::Eq, core::hash::Hash)
         )]
-        $(#[$non_exhaustive])?
         #[allow(deprecated)]
-        $(#[$attr])*
-        $pub struct $i { $($field)* }
+        $pub $t $i { $($field)* }
+    });
+    (rec non_exhaustive: $pub:vis $t:ident $i:ident { $($field:tt)* }) => (s! { fin:
+        #[repr(C)]
+        #[::core::prelude::v1::derive(
+            ::core::clone::Clone,
+            ::core::marker::Copy,
+            ::core::fmt::Debug,
+        )]
+        #[cfg_attr(
+            feature = "extra_traits",
+            ::core::prelude::v1::derive(::core::cmp::PartialEq, ::core::cmp::Eq, core::hash::Hash)
+        )]
+        #[non_exhaustive]
+        #[allow(deprecated)]
+        $pub $t $i { $($field)* }
+    });
+
+    (
+        rec: #[not_non_exhaustive] $(#[$attr:meta])*
+        $pub:vis $t:ident $i:ident { $($field:tt)* }
+    ) => ( s! { rec non_exhaustive: $(#[$attr])* $pub $t $i { $($field)* } } );
+
+    (
+        rec: #[$prev:meta] $(#[$attr:meta])*
+        $pub:vis $t:ident $i:ident { $($field:tt)* }
+    ) =>(
+        #[$prev]
+        s! { rec: $(#[$attr])* $pub $t $i { $($field)* } }
+    );
+    (
+        rec non_exhaustive: #[$prev:meta] $(#[$attr:meta])*
+        $pub:vis $t:ident $i:ident { $($field:tt)* }
+    ) => (
+        #[$prev]
+        s! { rec: $(#[$attr])* $pub $t $i { $($field)* } }
+    );
+
+    (it: $(#[$attr:meta])* $pub:vis union $i:ident { $($field:tt)* }) => (
+        core::compile_error!("unions cannot derive extra traits, use `s_no_extra_traits` instead");
+    );
+
+    (it: $(#[$attr:meta])* $pub:vis struct $i:ident { $($field:tt)* }) => (
+        s! { rec: $(#[$attr])* $pub struct $i { $($field)* } }
     );
 }
 
