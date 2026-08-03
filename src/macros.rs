@@ -182,7 +182,7 @@ macro_rules! s {
         it $(#[$non_exhaustive:meta])?: $(#[$attr:meta])*
         $pub:vis union $i:ident { $($field:tt)* }
     ) => (
-        compile_error!("unions cannot derive extra traits, use s_no_extra_traits instead");
+        core::compile_error!("unions cannot derive extra traits, use s_no_extra_traits instead");
     );
 
     (
