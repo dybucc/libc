@@ -1,4 +1,4 @@
-//! Source directory: `sysdeps/nptl/`o
+//! Source directory: `sysdeps/nptl/`
 //!
 //! Native POSIX threading library.
 //!

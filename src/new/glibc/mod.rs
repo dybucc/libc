@@ -4,7 +4,8 @@
 //! * Headers: <https://github.com/sailfishos-mirror/glibc> (mirror)
 //!
 //! This module structure is modeled after glibc's source tree. Its build system selects headers
-//! from different locations based on the platform, which we mimic here with reexports.
+//! from different locations based on the platform, which we mimic here with reexports and `#[path]`
+//! redirections.
 
 /// Source directory: `posix/`
 ///

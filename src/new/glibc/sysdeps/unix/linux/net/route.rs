@@ -1,7 +1,6 @@
-//! Header: `net/route.h`
-//!
 //! Source header: `sysdeps/unix/sysv/linux/net/route.h`
-//! <https://github.com/sailfishos-mirror/glibc/blob/master/sysdeps/unix/sysv/linux/net/route.h>
+//!
+//! <https://github.com/sailfishos-mirror/glibc/blob/d6031665c3a59faf75cf6bc55e041611da21d0e6/sysdeps/unix/sysv/linux/net/route.h>
 
 use crate::prelude::*;
 

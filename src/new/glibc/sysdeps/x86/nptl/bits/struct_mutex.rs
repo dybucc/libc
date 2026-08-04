@@ -1,4 +1,6 @@
 //! Header: `sysdeps/x86/nptl/bits/struct_mutex.h`
+//!
+//! <https://github.com/sailfishos-mirror/glibc/blob/4a07bb292f921c10e71fbf48c4a7f44391feb06c/sysdeps/x86/nptl/bits/struct_mutex.h>
 
 use crate::prelude::*;
 
