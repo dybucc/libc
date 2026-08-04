@@ -2274,7 +2274,6 @@ extern "C" {
     );
 }
 
-#[link(name = "rt")]
 extern "C" {
     pub fn aio_read(aiocbp: *mut aiocb) -> c_int;
     pub fn aio_write(aiocbp: *mut aiocb) -> c_int;
@@ -2296,7 +2295,6 @@ extern "C" {
     ) -> c_int;
 }
 
-#[link(name = "util")]
 extern "C" {
     #[link_name = "__getpwent_r50"]
     pub fn getpwent_r(
@@ -2445,7 +2443,6 @@ extern "C" {
     pub fn kinfo_getvmmap(pid: crate::pid_t, cntp: *mut size_t) -> *mut kinfo_vmentry;
 }
 
-#[link(name = "execinfo")]
 extern "C" {
     pub fn backtrace(addrlist: *mut *mut c_void, len: size_t) -> size_t;
     pub fn backtrace_symbols(addrlist: *const *mut c_void, len: size_t) -> *mut *mut c_char;

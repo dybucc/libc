@@ -1440,7 +1440,6 @@ extern "C" {
     pub fn closefrom(lowfd: c_int) -> c_int;
 }
 
-#[link(name = "rt")]
 extern "C" {
     pub fn aio_cancel(fd: c_int, aiocbp: *mut aiocb) -> c_int;
     pub fn aio_error(aiocbp: *const aiocb) -> c_int;
@@ -1464,7 +1463,6 @@ extern "C" {
     pub fn freezero(ptr: *mut c_void, size: size_t);
 }
 
-#[link(name = "kvm")]
 extern "C" {
     pub fn kvm_vm_map_entry_first(
         kvm: *mut crate::kvm_t,

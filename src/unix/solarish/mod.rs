@@ -2961,7 +2961,6 @@ extern "C" {
     ) -> size_t;
 }
 
-#[link(name = "sendfile")]
 extern "C" {
     pub fn sendfile(out_fd: c_int, in_fd: c_int, off: *mut off_t, len: size_t) -> ssize_t;
     pub fn sendfilev(
@@ -2972,7 +2971,6 @@ extern "C" {
     ) -> ssize_t;
 }
 
-#[link(name = "lgrp")]
 extern "C" {
     pub fn lgrp_init(view: lgrp_view_t) -> lgrp_cookie_t;
     pub fn lgrp_fini(cookie: lgrp_cookie_t) -> c_int;

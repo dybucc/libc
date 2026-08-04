@@ -61,7 +61,6 @@ pub const IOC_IN: c_ulong = 0x80000000;
 pub const IOC_INOUT: c_ulong = IOC_IN | IOC_OUT;
 pub const IOC_DIRMASK: c_ulong = 0xe0000000;
 
-#[link(name = "bsd")]
 extern "C" {
     // stdlib.h
     pub fn daemon(nochdir: c_int, noclose: c_int) -> c_int;

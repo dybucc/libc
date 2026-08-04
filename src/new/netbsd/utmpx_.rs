@@ -62,7 +62,6 @@ s! {
     }
 }
 
-#[link(name = "util")]
 extern "C" {
     pub fn setutxent();
     pub fn endutxent();

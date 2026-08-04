@@ -3347,10 +3347,6 @@ fn __MHDR_END(mhdr: *const msghdr) -> *mut c_uchar {
 
 // EXTERN_FN
 
-#[link(name = "c")]
-#[link(name = "fdio")]
-extern "C" {}
-
 extern_ty! {
     pub type FILE;
 }

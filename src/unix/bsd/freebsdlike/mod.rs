@@ -1829,7 +1829,6 @@ extern "C" {
     ) -> c_int;
 }
 
-#[link(name = "rt")]
 extern "C" {
     pub fn mq_close(mqd: crate::mqd_t) -> c_int;
     pub fn mq_getattr(mqd: crate::mqd_t, attr: *mut crate::mq_attr) -> c_int;
@@ -1872,7 +1871,6 @@ extern "C" {
     pub fn getentropy(buf: *mut c_void, buflen: size_t) -> c_int;
 }
 
-#[link(name = "util")]
 extern "C" {
     pub fn openpty(
         amaster: *mut c_int,
@@ -1897,14 +1895,12 @@ extern "C" {
     ) -> *mut c_char;
 }
 
-#[link(name = "execinfo")]
 extern "C" {
     pub fn backtrace(addrlist: *mut *mut c_void, len: size_t) -> size_t;
     pub fn backtrace_symbols(addrlist: *const *mut c_void, len: size_t) -> *mut *mut c_char;
     pub fn backtrace_symbols_fd(addrlist: *const *mut c_void, len: size_t, fd: c_int) -> c_int;
 }
 
-#[link(name = "kvm")]
 extern "C" {
     pub fn kvm_open(
         execfile: *const c_char,

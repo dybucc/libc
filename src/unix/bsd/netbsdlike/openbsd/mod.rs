@@ -2052,7 +2052,6 @@ extern "C" {
     pub fn elf_aux_info(aux: c_int, buf: *mut c_void, buflen: c_int) -> c_int;
 }
 
-#[link(name = "execinfo")]
 extern "C" {
     pub fn backtrace(addrlist: *mut *mut c_void, len: size_t) -> size_t;
     pub fn backtrace_symbols(addrlist: *const *mut c_void, len: size_t) -> *mut *mut c_char;

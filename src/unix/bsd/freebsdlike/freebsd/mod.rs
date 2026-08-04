@@ -4967,7 +4967,6 @@ extern "C" {
     ) -> *mut c_void;
 }
 
-#[link(name = "memstat")]
 extern "C" {
     pub fn memstat_strerror(error: c_int) -> *const c_char;
     pub fn memstat_mtl_alloc() -> *mut memory_type_list;
@@ -4983,7 +4982,6 @@ extern "C" {
     pub fn memstat_get_name(mtp: *const memory_type) -> *const c_char;
 }
 
-#[link(name = "kvm")]
 extern "C" {
     pub fn kvm_dpcpu_setcpu(kd: *mut crate::kvm_t, cpu: c_uint) -> c_int;
     pub fn kvm_getargv(
@@ -5026,7 +5024,6 @@ extern "C" {
     ) -> ssize_t;
 }
 
-#[link(name = "util")]
 extern "C" {
     pub fn extattr_namespace_to_string(attrnamespace: c_int, string: *mut *mut c_char) -> c_int;
     pub fn extattr_string_to_namespace(string: *const c_char, attrnamespace: *mut c_int) -> c_int;
@@ -5070,7 +5067,6 @@ extern "C" {
     // FIXME(freebsd): pidfile_signal in due time (both manpage present and updated image snapshot)
 }
 
-#[link(name = "procstat")]
 extern "C" {
     pub fn procstat_open_sysctl() -> *mut procstat;
     pub fn procstat_getfiles(
@@ -5162,7 +5158,6 @@ extern "C" {
     ) -> c_int;
 }
 
-#[link(name = "rt")]
 extern "C" {
     pub fn timer_create(clock_id: clockid_t, evp: *mut sigevent, timerid: *mut timer_t) -> c_int;
     pub fn timer_delete(timerid: timer_t) -> c_int;
@@ -5176,7 +5171,6 @@ extern "C" {
     ) -> c_int;
 }
 
-#[link(name = "devstat")]
 extern "C" {
     pub fn devstat_getnumdevs(kd: *mut crate::kvm_t) -> c_int;
     pub fn devstat_getgeneration(kd: *mut crate::kvm_t) -> c_long;

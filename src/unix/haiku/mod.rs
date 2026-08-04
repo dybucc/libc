@@ -1912,7 +1912,6 @@ extern "C" {
     pub fn getentropy(buf: *mut c_void, buflen: size_t) -> c_int;
 }
 
-#[link(name = "gnu")]
 extern "C" {
     pub fn memmem(
         source: *const c_void,

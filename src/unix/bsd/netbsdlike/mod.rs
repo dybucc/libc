@@ -699,7 +699,6 @@ pub const RB_AUTOBOOT: c_int = 0;
 
 pub const TCP_INFO: c_int = 9;
 
-#[link(name = "util")]
 extern "C" {
     pub fn setgrent();
     pub fn sem_destroy(sem: *mut sem_t) -> c_int;

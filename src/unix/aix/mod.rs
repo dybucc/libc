@@ -2582,13 +2582,11 @@ f! {
     }
 }
 
-#[link(name = "thread")]
 extern "C" {
     pub fn thr_kill(id: thread_t, sig: c_int) -> c_int;
     pub fn thr_self() -> thread_t;
 }
 
-#[link(name = "pthread")]
 extern "C" {
     pub fn pthread_atfork(
         prepare: Option<unsafe extern "C" fn()>,
@@ -2840,7 +2838,6 @@ extern "C" {
     pub fn pthread_testcancel();
 }
 
-#[link(name = "iconv")]
 extern "C" {
     pub fn iconv(
         cd: iconv_t,

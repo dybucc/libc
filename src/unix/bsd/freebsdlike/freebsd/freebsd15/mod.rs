@@ -405,7 +405,6 @@ extern "C" {
     );
 }
 
-#[link(name = "kvm")]
 extern "C" {
     pub fn kvm_kerndisp(kd: *mut crate::kvm_t) -> crate::kssize_t;
 }

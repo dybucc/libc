@@ -23,7 +23,6 @@ s! {
     }
 }
 
-#[link(name = "util")]
 extern "C" {
     pub fn utmpname(file: *const c_char) -> c_int;
     pub fn setutent();

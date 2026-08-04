@@ -681,19 +681,6 @@ f! {
     }
 }
 
-#[cfg_attr(
-    feature = "rustc-dep-of-std",
-    link(
-        name = "c",
-        kind = "static",
-        modifiers = "-bundle",
-        cfg(target_feature = "crt-static")
-    )
-)]
-#[cfg_attr(
-    feature = "rustc-dep-of-std",
-    link(name = "c", cfg(not(target_feature = "crt-static")))
-)]
 extern "C" {
     pub fn _Exit(code: c_int) -> !;
     pub fn _exit(code: c_int) -> !;
