@@ -89,6 +89,13 @@
 //!
 //! 5. Be aware of deprecation warnings. These are used as a way to migrate necessary API changes.
 //!
+//! 6. **Relevant to Windows targets**: Do not expect explicit `#[link]`ing on libc's side of
+//!    things. These are not part anymore of all other targets, and Windows targets are bound to
+//!    have those attribute annotations removed.
+//!
+//!    _Link everything you need explicitly_ through empty `extern` blocks with the corresponding
+//!    `#[link]` annotation.
+//!
 //! # Cargo Features
 //!
 //! - `std`: by default `libc` assumes that the standard library contains link directives necessary
