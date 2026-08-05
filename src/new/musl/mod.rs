@@ -22,7 +22,7 @@ pub(crate) mod bits {
 
 pub(crate) mod pthread;
 
-/// Directory: `sys/`
+/// Directory source: `include/sys`
 ///
 /// * Headers: <https://git.musl-libc.org/cgit/musl/tree/include/sys> (official)
 /// * Headers: <https://github.com/kraj/musl/tree/master/include/sys> (mirror)
