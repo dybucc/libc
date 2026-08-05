@@ -1,4 +1,7 @@
-//! Header: `pthread.h`
+//! Header source: `libpthread/nptl/sysdeps/pthread/pthread.h`
+//!
+//! * Headers: <https://gogs.waldemar-brodkorb.de/oss/uclibc-ng/src/60d8e8c0cb9be8a241f6f2645daba260c8aec33c/libpthread/nptl/sysdeps/pthread/pthread.h> (official)
+//! * Headers: <https://github.com/wbx-github/uclibc-ng/blob/60d8e8c0cb9be8a241f6f2645daba260c8aec33c/libpthread/nptl/sysdeps/pthread/pthread.h> (mirror)
 //!
 //! Note that The l4re port of uclibc doesn't yet support all `pthread_*` API that is
 //! available upstream.
