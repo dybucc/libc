@@ -162,6 +162,7 @@ macro_rules! s {
         s!(it: $(#[$attr])* $pub $t $i { $($field)* });
     )*);
 
+    // Finalizers; At this point, we need only apply the packed attributes.
     (rec($(#[$attr:meta])*): $pub:vis $t:ident $i:ident { $($field:tt)* }) => (
         #[repr(C)]
         #[::core::prelude::v1::derive(
@@ -188,35 +189,43 @@ macro_rules! s {
             feature = "extra_traits",
             ::core::prelude::v1::derive(::core::cmp::PartialEq, ::core::cmp::Eq, core::hash::Hash)
         )]
-        #[non_exhaustive]
         #[allow(deprecated)]
         $(#[$attr])*
-        $pub $t $i { $($field)* }
+        $pub $t $i { $($field)* , __non_exhaustive: () }
     );
 
+    // Regular munchers; The first one ensures there's a match on the attribute
+    // we use to opt out of the non-exhaustive private field, while the latter
+    // ensures we munch all other attributes into the processed list (to be
+    // applied in the finalizer subtrees.)
     (
         rec($(#[$proc:meta])*): #[not_non_exhaustive] $(#[$attr:meta])*
         $pub:vis $t:ident $i:ident { $($field:tt)* }
-    ) => ( s! { rec_non_exhaustive($(#[$proc])*): $(#[$attr])* $pub $t $i { $($field)* } } );
-
+    ) => (
+        s! { rec_non_exhaustive($(#[$proc])*): $(#[$attr])* $pub $t $i { $($field)* } }
+    );
     (
         rec($(#[$proc:meta])*): #[$prev:meta] $(#[$attr:meta])*
         $pub:vis $t:ident $i:ident { $($field:tt)* }
     ) =>(
         s! { rec($(#[$proc])* #[$prev]): $(#[$attr])* $pub $t $i { $($field)* } }
     );
+
+    // The muncher that is used once we've singled out the attribute to opt out
+    // of the non-exhaustive private field. At this point, we keep munching all
+    // attributes into the packed list to be applied in the finalizer subtrees.
     (
         rec_non_exhaustive($(#[$proc:meta])*): #[$prev:meta] $(#[$attr:meta])*
         $pub:vis $t:ident $i:ident { $($field:tt)* }
     ) => (
-        #[$prev]
         s! { rec_non_exhaustive($(#[$proc])* #[$prev]): $(#[$attr])* $pub $t $i { $($field)* } }
     );
 
+    // Initializer subtrees to single out `union`s and start recursing with
+    // `struct`s.
     (it: $(#[$attr:meta])* $pub:vis union $i:ident { $($field:tt)* }) => (
         core::compile_error!("unions cannot derive extra traits, use `s_no_extra_traits` instead");
     );
-
     (it: $(#[$attr:meta])* $pub:vis struct $i:ident { $($field:tt)* }) => (
         s! { rec(): $(#[$attr])* $pub struct $i { $($field)* } }
     );
