@@ -631,7 +631,7 @@ macro_rules! struct_with_default {
         remaining_fields: { }
     ) => {
         finalize_exhaustiveness! {
-            should_add_exhaustive: { $found_exhaustive },
+            found_exhaustive: { $found_exhaustive },
             expansion: { decl },
             body: {
                 $($other_attrs)*
@@ -650,7 +650,7 @@ macro_rules! struct_with_default {
             #[allow(unused_doc_comments)]
             fn default() -> Self {
                 finalize_exhaustiveness! {
-                    should_add_exhaustive: { $found_exhaustive },
+                    found_exhaustive: { $found_exhaustive },
                     expansion: { default_impl },
                     body: { $($processed_field_defaults)* }
                 }
@@ -664,23 +664,7 @@ macro_rules! struct_with_default {
 // without an additional private field to enforce non-exhaustiveness.
 macro_rules! finalize_exhaustiveness {
     (
-        should_add_exhaustive: { false },
-        expansion: { decl },
-        body: { $(#[$attr:meta])* $vis:vis $name:ident { $($field:tt)* } }
-    ) => {
-        $(#[$attr])*
-        $vis struct $name { $($field)* }
-    };
-    (
-        should_add_exhaustive: { false },
-        expansion: { default_impl },
-        body: { $($field_default:tt)* }
-    ) => {
-        Self { $($field_default)* }
-    };
-
-    (
-        should_add_exhaustive: { true },
+        found_exhaustive: { false },
         expansion: { decl },
         body: { $(#[$attr:meta])* $vis:vis $name:ident { $($field:tt)* } }
     ) => {
@@ -688,11 +672,27 @@ macro_rules! finalize_exhaustiveness {
         $vis struct $name { $($field)* __non_exhaustive: () }
     };
     (
-        should_add_exhaustive: { true },
+        found_exhaustive: { false },
         expansion: { default_impl },
         body: { $($field_default:tt)* }
     ) => {
         Self { $($field_default)* __non_exhaustive: () }
+    };
+
+    (
+        found_exhaustive: { true },
+        expansion: { decl },
+        body: { $(#[$attr:meta])* $vis:vis $name:ident { $($field:tt)* } }
+    ) => {
+        $(#[$attr])*
+        $vis struct $name { $($field)* }
+    };
+    (
+        found_exhaustive: { true },
+        expansion: { default_impl },
+        body: { $($field_default:tt)* }
+    ) => {
+        Self { $($field_default)* }
     };
 }
 
@@ -1090,6 +1090,56 @@ mod tests {
         assert_eq!(core::mem::offset_of!(Off1, b), offset_of!(Off1, b));
         assert_eq!(core::mem::offset_of!(Off1, c), offset_of!(Off1, c));
         assert_eq!(core::mem::offset_of!(Off1, d), offset_of!(Off1, d));
+    }
+
+    #[test]
+    fn s_with_default_is_non_exhaustive() {
+        // Without `#[exhaustive]`, the record should have an additional field
+        // added at the end. If this test compiles, it has it.
+        s_with_default! {
+            struct Something {
+                a: u32,
+            }
+        }
+
+        let s = Something::default();
+        assert_eq!(s.__non_exhaustive, ());
+    }
+
+    #[test]
+    fn s_with_default_uses_exhaustive() {
+        // With `#[exhaustive]`, the record should be regurgitated as-is. If
+        // this test compiles, then it works.
+        s_with_default! {
+            #[exhaustive]
+            struct Something {
+                a: u32,
+            }
+        }
+
+        #[allow(unused)]
+        let s = Something {
+            a: Default::default(),
+        };
+    }
+
+    #[test]
+    fn s_with_default_uses_mixed_exhaustive() {
+        // `#[exhaustive]` should work when sandwiched between attributes. If
+        // the test compiles, then it works.
+        s_with_default! {
+            #[repr(align(8))]
+            #[exhaustive]
+            #[repr(align(2))]
+            struct Something {
+                a: u32,
+            }
+        }
+
+        #[allow(unused)]
+        let s = Something {
+            a: Default::default(),
+        };
     }
 
     #[test]
