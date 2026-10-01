@@ -194,6 +194,10 @@ impl FfiItems {
         };
         items.swap_remove(idx).into()
     }
+
+    fn dedup(&mut self) {
+        todo!();
+    }
 }
 
 impl Default for FfiItems {
@@ -515,11 +519,11 @@ fn merge_module(dst: Module, src: Vec<Resolution>) -> Module {
             )| {
                 // [NOTE]: this sequence must have at least one segment, because
                 // the invariant assumed in the closure for path manipulation of
-                // the items to merge assuems so. This is true for all items to
+                // the items to merge assumes so. This is true for all items to
                 // merge, but this module wrapping all those items is only
                 // virtual in nature; The containig items (post-path-renaming)
                 // will be extracted, and the module trashed. But the module,
-                // even though a dummy, will also have the clsoure further down
+                // even though a dummy, will also have the closure further down
                 // below applied to its path, so it needs to be non-empty.
                 let mut dummy_segment = syn::punctuated::Punctuated::new();
                 dummy_segment.push(syn::PathSegment {
