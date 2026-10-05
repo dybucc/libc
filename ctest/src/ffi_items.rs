@@ -195,8 +195,26 @@ impl FfiItems {
         items.swap_remove(idx).into()
     }
 
-    fn dedup(&mut self) {
-        todo!();
+    fn dedup(mut self) -> FfiItems {
+        macro_rules! key_fn {
+            () => {
+                |it| it.cached_path.clone()
+            };
+        }
+        macro_rules! dedup {
+            ($it:ident) => {{
+                self.$it.sort_by_key(key_fn!());
+                self.$it.dedup_by_key(key_fn!());
+            }};
+        }
+        dedup!(aliases);
+        dedup!(structs);
+        dedup!(unions);
+        dedup!(constants);
+        dedup!(foreign_functions);
+        dedup!(foreign_statics);
+        dedup!(modules);
+        self
     }
 }
 
@@ -290,6 +308,10 @@ fn resolve_use_trees(root: Module) -> Module {
         iter::repeat(()).try_fold(root, |root, _| {
             let resolved_uses = resolve_one(root.clone());
             let new_root = merge_module(root.clone(), resolved_uses);
+            let new_root = Module {
+                items: new_root.items.dedup(),
+                ..new_root
+            };
             match root.items.uses.len() == new_root.items.uses.len() {
                 true => ControlFlow::Break(new_root),
                 false => ControlFlow::Continue(new_root),
@@ -917,7 +939,7 @@ use test2::*;
 
 use test::*;
 
-mod test { mod test2 { pub struct Foo; } }
+mod test { use test2::*; mod test2 { pub struct Foo; } }
     "#;
     let mut items = FfiItems::default();
     let file = syn::parse_file(source).unwrap();
