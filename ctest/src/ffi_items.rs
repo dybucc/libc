@@ -935,9 +935,9 @@ impl<'ast> Visit<'ast> for FfiItems {
 #[test]
 fn tmp() {
     let source = r#"
-use test2::*;
-
 use test::*;
+
+use test::test2::*;
 
 mod test { use test2::*; mod test2 { pub struct Foo; } }
     "#;
