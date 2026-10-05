@@ -755,7 +755,10 @@ fn visit_foreign_item_fn(table: &mut FfiItems, i: &syn::ForeignItemFn, abi: &Abi
                 ty: arg.ty.deref().clone(),
             },
             syn::FnArg::Receiver(_) => {
-                unreachable!("Foreign functions can't have self/receiver parameters.")
+                unreachable!(
+                    "Foreign functions can't have self/receiver \
+                     parameters."
+                )
             }
         })
         .collect::<Vec<_>>();
@@ -794,89 +797,89 @@ fn visit_foreign_item_static(table: &mut FfiItems, i: &syn::ForeignItemStatic, a
     });
 }
 
-impl<'ast> Visit<'ast> for FfiItems {
-    fn visit_item_type(&mut self, i: &'ast syn::ItemType) {
-        let public = is_visible(&i.vis);
-        let path = append_path(&self.current_module, &i.ident);
-        let cached_path = path_to_string(&path);
-        let ty = i.ty.deref().clone();
+fn visit_item_type(table: &mut FfiItems, i: &syn::ItemType) {
+    let public = is_visible(&i.vis);
+    let path = append_path(&table.current_module, &i.ident);
+    let cached_path = path_to_string(&path);
+    let ty = i.ty.deref().clone();
 
-        self.aliases.push(Type {
-            public,
-            cached_path,
-            path,
-            ty,
-        });
-    }
+    table.aliases.push(Type {
+        public,
+        cached_path,
+        path,
+        ty,
+    });
+}
 
-    fn visit_item_struct(&mut self, i: &'ast syn::ItemStruct) {
-        let public = is_visible(&i.vis);
-        let path = append_path(&self.current_module, &i.ident);
-        let cached_path = path_to_string(&path);
-        let fields = match &i.fields {
-            syn::Fields::Named(fields) => collect_fields(&fields.named),
-            syn::Fields::Unnamed(fields) => collect_fields(&fields.unnamed),
-            syn::Fields::Unit => Vec::new(),
-        };
+fn visit_item_struct(table: &mut FfiItems, i: &syn::ItemStruct) {
+    let public = is_visible(&i.vis);
+    let path = append_path(&table.current_module, &i.ident);
+    let cached_path = path_to_string(&path);
+    let fields = match &i.fields {
+        syn::Fields::Named(fields) => collect_fields(&fields.named),
+        syn::Fields::Unnamed(fields) => collect_fields(&fields.unnamed),
+        syn::Fields::Unit => Vec::new(),
+    };
 
-        self.structs.push(Struct {
-            public,
-            cached_path,
-            path,
-            fields,
-        });
-    }
+    table.structs.push(Struct {
+        public,
+        cached_path,
+        path,
+        fields,
+    });
+}
 
-    fn visit_item_union(&mut self, i: &'ast syn::ItemUnion) {
-        let public = is_visible(&i.vis);
-        let path = append_path(&self.current_module, &i.ident);
-        let cached_path = path_to_string(&path);
-        let fields = collect_fields(&i.fields.named);
+fn visit_item_union(table: &mut FfiItems, i: &syn::ItemUnion) {
+    let public = is_visible(&i.vis);
+    let path = append_path(&table.current_module, &i.ident);
+    let cached_path = path_to_string(&path);
+    let fields = collect_fields(&i.fields.named);
 
-        self.unions.push(Union {
-            public,
-            cached_path,
-            path,
-            fields,
-        });
-    }
+    table.unions.push(Union {
+        public,
+        cached_path,
+        path,
+        fields,
+    });
+}
 
-    fn visit_item_const(&mut self, i: &'ast syn::ItemConst) {
-        let public = is_visible(&i.vis);
-        let path = append_path(&self.current_module, &i.ident);
-        let cached_path = path_to_string(&path);
-        let ty = i.ty.deref().clone();
+fn visit_item_const(table: &mut FfiItems, i: &syn::ItemConst) {
+    let public = is_visible(&i.vis);
+    let path = append_path(&table.current_module, &i.ident);
+    let cached_path = path_to_string(&path);
+    let ty = i.ty.deref().clone();
 
-        self.constants.push(Const {
-            public,
-            cached_path,
-            path,
-            ty,
-        });
-    }
+    table.constants.push(Const {
+        public,
+        cached_path,
+        path,
+        ty,
+    });
+}
 
-    fn visit_item_foreign_mod(&mut self, i: &'ast syn::ItemForeignMod) {
-        // Because we need to store the ABI we can't directly visit the foreign
-        // functions/statics.
+fn visit_item_foreign_mod(table: &mut FfiItems, i: &syn::ItemForeignMod) {
+    // Because we need to store the ABI we can't directly visit the foreign
+    // functions/statics.
 
-        // Since this is an extern block, assume extern "C" by default.
-        let abi = i
-            .abi
-            .name
-            .clone()
-            .map_or(Abi::C, |s| Abi::from(s.value().as_str()));
+    // Since this is an extern block, assume extern "C" by default.
+    let abi = i
+        .abi
+        .name
+        .clone()
+        .map_or(Abi::C, |s| Abi::from(s.value().as_str()));
 
-        for item in &i.items {
-            match item {
-                syn::ForeignItem::Fn(function) => visit_foreign_item_fn(self, function, &abi),
-                syn::ForeignItem::Static(static_variable) => {
-                    visit_foreign_item_static(self, static_variable, &abi)
-                }
-                _ => (),
+    for item in &i.items {
+        match item {
+            syn::ForeignItem::Fn(function) => visit_foreign_item_fn(table, function, &abi),
+            syn::ForeignItem::Static(static_variable) => {
+                visit_foreign_item_static(table, static_variable, &abi)
             }
+            _ => (),
         }
     }
+}
 
+impl<'ast> Visit<'ast> for FfiItems {
     fn visit_item_mod(&mut self, i: &'ast syn::ItemMod) {
         let syn::ItemMod {
             vis,
@@ -885,23 +888,43 @@ impl<'ast> Visit<'ast> for FfiItems {
             ..
         } = i
         else {
-            unreachable!("this runs post cargo-expand, which inlines all modules");
+            unreachable!(
+                "this runs post cargo-expand, which inlines all \
+                 modules"
+            );
         };
         let uses: Vec<_> = mod_items
             .iter()
             .cloned()
-            .filter_map(|it| {
-                if let syn::Item::Use(syn::ItemUse { vis, tree, .. }) = it {
-                    normalize_path(tree)
-                        .into_iter()
-                        .map(move |tree| RefinedUse {
-                            is_public: matches!(vis, syn::Visibility::Public(_)),
-                            tree,
-                        })
-                        .into()
-                } else {
+            .filter_map(|it| match it {
+                syn::Item::Type(t) => {
+                    visit_item_type(self, &t);
                     None
                 }
+                syn::Item::Struct(s) => {
+                    visit_item_struct(self, &s);
+                    None
+                }
+                syn::Item::Union(u) => {
+                    visit_item_union(self, &u);
+                    None
+                }
+                syn::Item::Const(c) => {
+                    visit_item_const(self, &c);
+                    None
+                }
+                syn::Item::ForeignMod(m) => {
+                    visit_item_foreign_mod(self, &m);
+                    None
+                }
+                syn::Item::Use(syn::ItemUse { vis, tree, .. }) => normalize_path(tree)
+                    .into_iter()
+                    .map(move |tree| RefinedUse {
+                        is_public: matches!(vis, syn::Visibility::Public(_)),
+                        tree,
+                    })
+                    .into(),
+                _ => None,
             })
             .flatten()
             .collect();
@@ -935,11 +958,29 @@ impl<'ast> Visit<'ast> for FfiItems {
 #[test]
 fn tmp() {
     let source = r#"
-use test::*;
+use test2::test3;
 
-use test::test2::*;
+use test1::*;
 
-mod test { use test2::*; mod test2 { pub struct Foo; } }
+use test1::test2::test3::*;
+
+mod test1 {
+    use test2::{*, test3::*};
+
+    mod test2 {
+        use test3::*;
+
+        mod test3 {
+            pub struct Foo;
+
+            fn failure() {
+                extern "C" {
+                    fn ctime();
+                }
+            }
+        }
+    }
+}
     "#;
     let mut items = FfiItems::default();
     let file = syn::parse_file(source).unwrap();
