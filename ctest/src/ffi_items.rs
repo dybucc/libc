@@ -897,10 +897,8 @@ impl<'ast> Visit<'ast> for FfiItems {
         let mut running_items = if is_crate_root {
             self.clone()
         } else {
-            let path = append_path(&self.current_module, ident);
-            let cached_path = path_to_string(&path);
             let out = FfiItems {
-                current_module: path.clone(),
+                current_module: append_path(&self.current_module, ident),
                 ..Default::default()
             };
             out
@@ -947,12 +945,10 @@ impl<'ast> Visit<'ast> for FfiItems {
         if is_crate_root {
             *self = running_items;
         } else {
-            let path = append_path(&self.current_module, ident);
-            let cached_path = path_to_string(&path);
             self.modules.push(Module {
                 public: matches!(vis, Visibility::Public(_)),
-                cached_path,
-                path,
+                cached_path: path_to_string(&running_items.current_module),
+                path: running_items.current_module.clone(),
                 items: running_items,
             });
         }
