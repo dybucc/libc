@@ -893,28 +893,40 @@ impl<'ast> Visit<'ast> for FfiItems {
                  modules"
             );
         };
+        let is_crate_root = ident == "__ctest_root_mod";
+        let mut running_items = if is_crate_root {
+            self.clone()
+        } else {
+            let path = append_path(&self.current_module, ident);
+            let cached_path = path_to_string(&path);
+            let out = FfiItems {
+                current_module: path.clone(),
+                ..Default::default()
+            };
+            out
+        };
         let uses: Vec<_> = mod_items
             .iter()
             .cloned()
             .filter_map(|it| match it {
                 syn::Item::Type(t) => {
-                    visit_item_type(self, &t);
+                    visit_item_type(&mut running_items, &t);
                     None
                 }
                 syn::Item::Struct(s) => {
-                    visit_item_struct(self, &s);
+                    visit_item_struct(&mut running_items, &s);
                     None
                 }
                 syn::Item::Union(u) => {
-                    visit_item_union(self, &u);
+                    visit_item_union(&mut running_items, &u);
                     None
                 }
                 syn::Item::Const(c) => {
-                    visit_item_const(self, &c);
+                    visit_item_const(&mut running_items, &c);
                     None
                 }
                 syn::Item::ForeignMod(m) => {
-                    visit_item_foreign_mod(self, &m);
+                    visit_item_foreign_mod(&mut running_items, &m);
                     None
                 }
                 syn::Item::Use(syn::ItemUse { vis, tree, .. }) => normalize_path(tree)
@@ -929,27 +941,19 @@ impl<'ast> Visit<'ast> for FfiItems {
             .flatten()
             .collect();
 
-        // [NOTE]: if the module is known to keep be the virtual module that we
-        // create to process the items in the crate root, then we require not
-        // creating a new module that will become a child to the current one,
-        // but rather make all items in the module become the items of the
-        // current module (the crate root.)
-        if ident == "__ctest_root_mod" {
-            visit::visit_item_mod(self, i);
-            self.uses = uses;
+        visit::visit_item_mod(&mut running_items, i);
+        running_items.uses = uses;
+
+        if is_crate_root {
+            *self = running_items;
         } else {
-            let public = matches!(vis, Visibility::Public(_));
             let path = append_path(&self.current_module, ident);
             let cached_path = path_to_string(&path);
-            let mut items = FfiItems::new();
-            items.current_module = path.clone();
-            visit::visit_item_mod(&mut items, i);
-            items.uses = uses;
             self.modules.push(Module {
-                public,
+                public: matches!(vis, Visibility::Public(_)),
                 cached_path,
                 path,
-                items,
+                items: running_items,
             });
         }
     }
@@ -960,15 +964,17 @@ fn tmp() {
     let source = r#"
 use test2::test3;
 
-use test1::*;
-
-use test1::test2::test3::*;
+use test1::{*, test2::test3::*};
 
 mod test1 {
     use test2::{*, test3::*};
 
     mod test2 {
         use test3::*;
+
+        extern "C" {
+            fn time();
+        }
 
         mod test3 {
             pub struct Foo;
