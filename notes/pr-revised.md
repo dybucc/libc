@@ -1,3 +1,80 @@
+## Description
+
+Add support for (currently) parsing and filtering Rust modules found in
+the target crate to test. This is supposed to provide scaffolding for
+multiple open feature requests that depend on ctest having support for
+modules.
+
+I decided to open this before finishing up work on generating proper
+tests on both C and Rust sides, because I am not sure if I should just
+let the user deal with including a cohesive set of modules that do not
+cause item resolution conflicts, or if I should instead generate
+separate tests for each parsed module.
+
+**Edit**: the above paragraph really goes to say that I am not sure
+whether I should generate multiple test templates while recursing
+through the modules in `TestGenerator::generate_files`, or if I should
+instead recurse through them in `TestTemplate::new` (with the passed
+`FfiItems`) and return a collection of test templates for each parsed
+module that has not been skipped.
+
+**Edit 2**: I decided to go for generating multiple test templates for
+each parsed module.
+
+**Edit 3**: I completely forgot about `use` statements, so most of this
+is currently useless.
+
+**Edit 4**: `use` statements have now an initial solution. This still
+has limitations. Relevant changes are documented in Section Update 3. A
+better algorithm is in the works.
+
+cc @tgross35 @mbyx
+
+### TODO
+
+- [ ] Look into parsing `use` statements, as those are the one things
+      missing from getting modules to work.
+
+- [ ] Update the docs to the public API of `TestGenerator` to mention
+      that the name remapping ought return the C identifiers without
+      worrying about potential item resolution conflicts.
+
+- [x] Look through the `populate_roundtrip_tests` function, as that one
+      I skipped to go first to `populate_field_ptr_tests` because of the
+      order these tests appear in the test template files.
+
+- [ ] Look into properly resolving paths to the types of type aliases,
+      constants and statics. These are handled poorly now. An example is
+      the check for arrays that is made in
+      `template::TestTemplate::populate_roundtrip_tests`, which does not
+      consider whether the type of the alias is itself an alias to be
+      resolved recursively (and potentially be an array.)
+
+### Update 1
+
+I have changed the way we parse item identifiers, and more specifically,
+their absolute paths without `crate` at the start (e.g.
+`foo::bar::ctime()` instead of `crate::foo::bar::ctime()`.)
+
+This should make filtering continue working as-is right now for items,
+but allow filtering on items in nested submodules by using an
+appropriate string matching something like the above example.
+
+### Update 2
+
+I think the initial set of changes is done. I have gone down the route
+of potentially generating multiple templates for each parsed module,
+such that more than a single test is generated. I have not yet
+implemented the multi-template generation stuff, but that should be
+fairly straightforward. What I believe to be done is the logic for
+generating test to the right Rust paths while also keeping the single
+segment paths on the C side of things.
+
+I am currently working through the tests, to see what is missing and
+broken from the prior `ctest` interface. At this point, I am only trying
+to work through the prior tests to see if they continue working and
+generating the same set of tests (barring nested modules.)
+
 ### Update 3
 
 This is an update on the last few weeks' worth of work. Time was spent
@@ -295,3 +372,11 @@ Cases like these are in need of deduplication.
 Performance has not been taken into consideration. Certain data
 structures could be improved. One example would be the use of
 associative arrays for items. This would avoid deduplication.
+
+## Checklist
+
+- [ ] Relevant tests in `ctest/tests` and `ctest/src/tests.rs` have been
+      updated
+- [ ] Tested locally (`LIBC_BLESS=1 cargo test -p ctest`);
+
+@rustbot label +stable-nominated

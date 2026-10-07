@@ -438,10 +438,6 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Re
         }
 
         RefinedUseTree::Path(RefinedUsePath { ident, tree }) => {
-            let new_use = RefinedUse {
-                is_public: r#use.is_public,
-                tree: *tree.clone(),
-            };
             let new_state = match state.items.search(ident.clone()) {
                 Some(GenericItem::Module(m)) => m,
                 None => return Resolution::Unresolved,
@@ -452,6 +448,10 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Re
                      that can span multiple segments of a path without \
                      strictly being nested modules"
                 ),
+            };
+            let new_use = RefinedUse {
+                is_public: r#use.is_public,
+                tree: *tree.clone(),
             };
             resolve_use(original_use, new_use, new_state)
         }
