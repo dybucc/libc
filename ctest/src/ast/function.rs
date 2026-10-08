@@ -7,7 +7,7 @@ use crate::{
 /// Represents a function signature defined in Rust.
 ///
 /// This structure is only used for parsing functions in extern blocks.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Fn {
     pub(crate) public: bool,
     #[expect(unused)]

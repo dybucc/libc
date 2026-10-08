@@ -205,3 +205,61 @@ conditionally defined. It is the current module in the self case. It is
 the parent module in the super case. It is the module tree in the crate
 case. This makes it obvious there is need for the module tree as state.
 The crate case would make both pieces of state become the module tree.
+The next step seems to be to add support for the new state. This now
+comprises the crate-wide module tree. The first thing that needs
+modification is the top-level loop. This should be removed from the
+single-module resolution proof. Though there is no obvious proposition
+for global resolution. It seems like the place to put this is the
+parsing entrypoint for the item container. That would be subpar. A
+better approach may be to abstract that away into another proposition.
+That proposition would perform the global passes. That should leave the
+parsing entry point unmodified. The global resolution proposition should
+never be called recursively. That should ensure one can reason about the
+crate module as the only consumer of the proposition. The proof should
+call into the proposition that performs one pass over the entire module
+tree. The implication of that is another module. This is guaranteed to
+be the post-pass state of the crate root. Then the diffing step should
+come. This is a diff between the pre-pass and post-pass states of the
+whole module tree. This comparison proposition needs discussion. It
+should compare the shape of the tree. Maybe an automatically derived
+PartialEq implementation will do. It will not. That would also take into
+consideration the current_module field used at parse-time. Something
+similar would be convenient. The proposition for equality would then
+"write itself." A comparison of aliases would do. Then would follow a
+comparison of records. And then a comparison of all other fields. Except
+for the parse-time utility field. That should do the trick. This assumes
+there are PartialEq implementations for the types used for items. That
+does not necessarily hold. Though those should be feasible. Those
+implementations seem done now. A comparison of a tree should trigger a
+recursive comparison of the entire tree. Though note this is exposed as
+a separate proposition. The driver seems to be now ready. The next thing
+should be to change the state passed to the single-pass proposition.
+This needs to now also pass the module tree in whole. That should be
+seeded with the same value as is currently used for the crate root. This
+awards a dedicated proposition. It should gather within it the state as
+a subtree and the whole-crate module tree. This should also make up the
+implication of a single resolution pass. Then it follows that there
+exists a new state after each child module is processed. This calls for
+a fold instead of a map. The fold implies a product of identity
+functors. The pair is comprised of an updated state and a resolved list
+of child modules. The updated state itself reflects the state carried
+across passes. The resolved list represents the previously mapped list
+of child modules. There is something unnecessary here. There is no need
+to have a duplicate list of updated child modules. It is enough that the
+stateful pair carries the subtree and the state. Except it is not. The
+subtree in the stateful pair refers not to the module from which the
+child modules spawned. There is need to reconstruct a new module. This
+should hold the resolved child modules. Then comes resolution of the
+module itself. This should hold this newly constructed module. The other
+half of the pair should hold the stateful module tree from the fold over
+the list of child modules. The proposition for single-module resolution
+should now take a stateful pair. The list of resolutions need not carry
+with it an updated whole-crate state. That changes only after a pass
+over a given module is done. Discussion of the single-reexport
+resolution proposition will be delayed for later. The next step follows
+back in the single-pass proposition. The proof now has a set of
+resolution items. It needs to merge those with the module currently at
+hand. Then it needs to deduplicate the items. The last thing is to
+update the stateful module tree. Merging already has a dedicated
+proposition. Deduplication also has a dedicated proposition. Updating
+the module tree does not.

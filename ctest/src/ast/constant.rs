@@ -1,7 +1,7 @@
 use crate::BoxStr;
 
 /// Represents a constant variable defined in Rust.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Const {
     pub(crate) public: bool,
     pub(crate) cached_path: BoxStr,

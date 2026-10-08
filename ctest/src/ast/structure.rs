@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Represents a struct defined in Rust.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Struct {
     pub(crate) public: bool,
     pub(crate) cached_path: BoxStr,

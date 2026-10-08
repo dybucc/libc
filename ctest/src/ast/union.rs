@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Represents a union defined in Rust.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Union {
     pub(crate) public: bool,
     pub(crate) cached_path: BoxStr,

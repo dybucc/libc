@@ -144,7 +144,24 @@ impl FfiItems {
             },
             items: self.clone(),
         };
-        *self = resolve_use_trees(root_module).items;
+        *self = resolve_all(root_module).items;
+    }
+
+    /// Perfomrs a comparison for equality between FfiItems without taking field
+    /// current_module into consideration.
+    ///
+    /// This is not an implementation of PartialEq for FfiItems because it would
+    /// be unintuitive to have it ignore one field. This is only ever needed
+    /// during use statement resolution.
+    pub(super) fn custom_eq(&self, other: &Self) -> bool {
+        self.aliases == other.aliases
+            && self.structs == other.structs
+            && self.unions == other.unions
+            && self.constants == other.constants
+            && self.foreign_functions == other.foreign_functions
+            && self.foreign_statics == other.foreign_statics
+            && self.uses == other.uses
+            && self.modules == other.modules
     }
 
     /// Searches for an item in the container, and returns an owned instance of
@@ -282,6 +299,38 @@ fn normalize_path(path: syn::UseTree) -> Vec<RefinedUseTree> {
     }
 }
 
+#[derive(Debug, Clone)]
+struct PassPair {
+    subtree: Module,
+    whole_crate: Module,
+}
+
+/// This is the resolution driver. It is the entrypoint for whole crate
+/// resolution.
+///
+/// It performs passes on a given module. It diffs the results of a whole-crate
+/// pass with the pre-pass state. Equality in that comparison determines
+/// termination.
+fn resolve_all(root: Module) -> Module {
+    let (ControlFlow::Break(m) | ControlFlow::Continue(m)) =
+        iter::repeat(()).try_fold(root, |root, _| {
+            // [NOTE]: it holds that a pass over the crate root will yield the
+            // crate root as its subtree. It is thus safe to ignore whole-crate
+            // module tree (they're the same at this point.)
+            let PassPair {
+                subtree: new_root, ..
+            } = resolve_pass(&PassPair {
+                subtree: root.clone(),
+                whole_crate: root.clone(),
+            });
+            match new_root == root {
+                true => ControlFlow::Break(new_root),
+                false => ControlFlow::Continue(new_root),
+            }
+        });
+    m
+}
+
 enum Resolution {
     Resolved {
         original_use: RefinedUse,
@@ -290,47 +339,58 @@ enum Resolution {
     Unresolved,
 }
 
-fn resolve_use_trees(root: Module) -> Module {
-    let resolved_children = root
-        .items
-        .modules
-        .into_iter()
-        .map(resolve_use_trees)
-        .collect();
-    let root = {
-        let items = FfiItems {
-            modules: resolved_children,
-            ..root.items
-        };
-        Module { items, ..root }
+fn resolve_pass(src: &PassPair) -> PassPair {
+    let (PassPair { whole_crate, .. }, resolved_children) =
+        root.items.modules.clone().into_iter().fold(
+            (src, Vec::new()),
+            |(PassPair { whole_crate, .. }, mut children), m| {
+                let pair = resolve_pass(PassPair {
+                    subtree: m,
+                    whole_crate,
+                });
+                children.push(pair.subtree);
+                (pair, children)
+            },
+        );
+    let resolved_uses = resolve_one(PassPair {
+        subtree: Module {
+            items: FfiItems {
+                modules: resolved_children,
+                ..src.subtree.items
+            },
+            ..src.subtree
+        },
+        whole_crate,
+    });
+    let new_root = merge_module(root.clone(), resolved_uses.clone());
+    let new_root = Module {
+        items: new_root.items.dedup(),
+        ..new_root
     };
-    let (ControlFlow::Continue(root) | ControlFlow::Break(root)) =
-        iter::repeat(()).try_fold(root, |root, _| {
-            let resolved_uses = resolve_one(root.clone());
-            let new_root = merge_module(root.clone(), resolved_uses);
-            let new_root = Module {
-                items: new_root.items.dedup(),
-                ..new_root
-            };
-            match root.items.uses.len() == new_root.items.uses.len() {
-                true => ControlFlow::Break(new_root),
-                false => ControlFlow::Continue(new_root),
-            }
-        });
-    root
+    todo!("produce a new whole-crate module tree through the new subtree");
+    new_root
 }
 
-fn resolve_one(src: Module) -> Vec<Resolution> {
-    src.items
+fn resolve_one(src: PassPair) -> Vec<Resolution> {
+    src.subtree
+        .items
         .uses
         .clone()
         .into_iter()
-        .map(|u| (u.clone(), u, src.clone()))
-        .map(|(ou, u, m)| resolve_use(ou, u, m))
+        .map(|u| {
+            resolve_use(
+                u.clone(),
+                u,
+                PassPair {
+                    subtree: src.clone(),
+                    whole_crate: state.clone(),
+                },
+            )
+        })
         .collect()
 }
 
-fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Resolution {
+fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: PassPair) -> Resolution {
     macro_rules! self_case {
         ($it:ident, $target:expr) => {
             if is_self($it.clone()) {
@@ -358,8 +418,8 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Re
                     }
                 }};
             }
-            self_case!(ident, state);
-            match state.items.search(ident.clone()) {
+            self_case!(ident, state.subtree);
+            match state.subtree.items.search(ident.clone()) {
                 Some(GenericItem::Type(t)) => single_item!(aliases: t),
                 Some(GenericItem::Struct(s)) => single_item!(structs: s),
                 Some(GenericItem::Union(u)) => single_item!(unions: u),
@@ -372,7 +432,7 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Re
         }
         RefinedUseTree::Glob => Resolution::Resolved {
             original_use,
-            items: state.items,
+            items: state.subtree.items,
         },
         RefinedUseTree::Rename(syn::UseRename { ident, rename, .. }) => {
             macro_rules! single_item {
@@ -432,8 +492,8 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Re
                     m,
                 )
             };
-            self_case!(ident, renamer(state));
-            match state.items.search(ident.clone()) {
+            self_case!(ident, renamer(state.subtree));
+            match state.subtree.items.search(ident.clone()) {
                 Some(GenericItem::Module(m)) => Resolution::Resolved {
                     original_use,
                     items: FfiItems {
@@ -453,9 +513,9 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Re
 
         RefinedUseTree::Path(RefinedUsePath { ident, tree }) => {
             let new_state = if is_self(ident.clone()) {
-                state
+                state.subtree
             } else {
-                match state.items.search(ident.clone()) {
+                match state.subtree.items.search(ident.clone()) {
                     Some(GenericItem::Module(m)) => m,
                     None => return Resolution::Unresolved,
                     Some(_) => unreachable!(

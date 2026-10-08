@@ -11,6 +11,19 @@ pub struct Module {
     pub(crate) items: FfiItems,
 }
 
+// [NOTE]: a custom implementation is used because FfiItems does not have a
+// PartialEq implementation. It is best if it does not have one. The
+// current_module field in FfiItems is not meant for use post-parse-time. It
+// would likely be unintuitive to have its PartialEq not take into account.
+impl PartialEq for Module {
+    fn eq(&self, other: &Self) -> bool {
+        self.public == other.public
+            && self.cached_path == other.cached_path
+            && self.path == other.path
+            && self.items.custom_eq(&other.items)
+    }
+}
+
 impl Module {
     /// Returns the full path to the module item.
     ///

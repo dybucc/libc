@@ -1,7 +1,7 @@
 use crate::BoxStr;
 
 /// Represents a parameter in a function signature defined in Rust.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Parameter {
     pub(crate) ident: BoxStr,
     #[expect(unused)]
