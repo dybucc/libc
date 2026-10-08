@@ -76,5 +76,91 @@ items from the child module. The same thing will happen in the child
 module. This seems trivial. But it may very well be the solution. More
 thought has to be put into test cases. There are likely edge cases that
 this does not consider. The current data structures are a potentially
-subpar fit for the task. But benchmarking should reveal that once the
-thing is implemented.
+subpar fit for the task. That should be the task of benchmarks. A recap
+of the plan is in order. The idea is to perform module-wide passes.
+These happen at the top-level resolution proposition. The termination
+check should also be moved there. The check should not base itself off
+of a diff of use statements. The check is over the entire tree. This
+implies need for a copy of the module tree. That would have happened
+anyway. That is because of the pure nature of the computations.
+Discussion about other areas is in order. The single-module resolution
+proposition should change. It should now be simpler. The pass system
+does not exist anymore there. A single resolution should be made. Though
+this should continue to be followed up by use of the merge proposition.
+The other areas of the current revision can be left as-is. Path
+manipulation will come in very handy. The current merging strategy is
+key to the new algorithm. That should likely be left unchanged. A more
+complex test case must be thought up. The test cases should change.
+They've all had the same shape thus far. Consider the case of an
+absolute use statement. Suppose it is found in some arbitrarily deep
+module. Then suppose every other module has a reexport to it. The first
+pass would import the module over to all other modules. This pass would
+also resolve the absolute use statement. Some modules would already
+observe this. These would be the descendants to the former. A second
+pass would then be performed. There have been changes in the first pass.
+That is why a second pass would be in order. The second pass would go
+through the same use statements anew. This is where deduplication comes
+in. The same use statements would be resolved anew. Deduplication would
+remove duplicate items. The import to the denoted module would be kept.
+These are key. An observation can be made about this algorithm. The
+amount of work per module-wide pass is fixed in some ways. The number of
+use statements considered is always the same. Dependent use statements
+will not be resolved. They will once their dependency exists no more.
+That is the one way in which work varies across passes. This can be
+modeled in terms of a set of sentences. These sentences await
+satisfiability. Satisfiability of some sentence depends on
+satisfiability of some other sentence. Dependent sentences are defined
+as such. At least one sentence must be dependency-free. This triggers
+resolution of other sentences. There is an exception here. Some
+sentences are unresolvable. And yet they appear as dependent. These
+correspond with use statements from third-party crates. The algorithm
+relies not on these. Unresolvable sentences are eventually skipped. The
+algorithm has no notion of unresolvable sentences. It only ever
+determines dependency of sentences. It does not determine which are the
+dependencies. A dependent use statement can not be immediately resolved.
+Some name in its path does not currently exist. At one point it may
+exist. It is unknown whether that point is reachable. The diff
+comparison determines if it may be reachable. An observable change in
+the tree indicates further resolution is in order. No observable change
+indicates no further resolution is possible. The diff thus determines if
+some dependent sentence is satisfiable. It does not determine which
+sentence is satisfiable. The algorithm always goes through all
+sentences. It attempts to satisfy each sentence in turn. Some may yield
+observable change. Some may not. Termination follows when there is no
+observable change at all. Discussion is needed of the new machinery this
+algorithm needs. Resolution of bidirectional use statements needs access
+to the entire module tree. The stateful module in the
+reexport-resolution proposition is not enough. There is need for the
+entire module tree. This should reflect the most up-to-date snapshot.
+That can be found after each single-module resolution. This was already
+explored in the latest revision of the Idris proof. The depth-first
+approach in the single-module resolution proposition must be kept. There
+is now need for this to carry state. The state should consist of the
+module tree snapshot. The seed should be the same as the module to
+resolve. This means the initial module is the crate root. So should the
+stateful module tree be. Then the single-module resolution proposition
+can use this alongside the single-reexport resolution proposition. The
+latter will need to add another piece of state. The state is now
+composed of the parent module and the entire module tree. Note the
+module tree state need not change across each reexport resolution. It
+changes once the merging proposition is triggered. That will need
+another auxiliary proposition. It should observe the changes in a given
+subtree. Then it should effect those in a new crate module tree. The
+details of the single-reexport resolution proof need discussion. This
+may now support path keywords. These include: crate, super and self. A
+review of the Rust reference may be in order. These are the only
+keywords that must be considered. The syn use tree does not include
+special support for any of these. That likely means they are to be used
+as identifiers. The syn documentation on identifiers mentions that.
+Keywords will be parsed as identifiers. A manually-constructed
+identifier may not be a keyword. The logic is then simplified. The
+basecase for names needs modification. It should check whether the
+identifier refers to a keyword. This also affects the rename case. The
+check will need to consult the syn documentation. Maybe there is already
+a utility proposition for keywords. There is none. The string conversion
+utility will be used instead. This should yield reasonable results. The
+case is of a single identifier. There should be no need for
+sanitization. This is a good opportunity for implementation. A change to
+the above cases will not affect the prior revision of the algorithm. The
+self keyword requires no module tree state. It may be readily
+implemented.

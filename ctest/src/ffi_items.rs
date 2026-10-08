@@ -442,11 +442,10 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Re
                 Some(GenericItem::Module(m)) => m,
                 None => return Resolution::Unresolved,
                 Some(_) => unreachable!(
-                    "paths we parse in ctest include only modules, and not \
-                     enum variants; update this in the future if we start \
-                     supporting enum variants and thus start having imports \
-                     that can span multiple segments of a path without \
-                     strictly being nested modules"
+                    "Paths parsed in ctest do not include enum variants. \
+                     Update this if support for enum variants is added. \
+                     Multi-segment import paths may then refer to items other \
+                     than modules."
                 ),
             };
             let new_use = RefinedUse {
@@ -456,6 +455,10 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Re
             resolve_use(original_use, new_use, new_state)
         }
     }
+}
+
+fn is_self(ident: syn::Ident) -> bool {
+    ident.to_string() == "self"
 }
 
 fn manipulate_path(f: impl ops::Fn(syn::Path) -> syn::Path + Clone, root: Module) -> Module {
@@ -984,8 +987,24 @@ mod test1 {
     }
 }
     "#;
+    let tmp = "use self as root;";
     let mut items = FfiItems::default();
-    let file = syn::parse_file(source).unwrap();
+    let file = syn::parse_file(tmp).unwrap();
     items.visit_file(&file);
+    let is_self = items
+        .uses
+        .first()
+        .cloned()
+        .into_iter()
+        .filter_map(|u| {
+            if let RefinedUseTree::Rename(syn::UseRename { ident, .. }) = u.tree.clone() {
+                Some(ident.to_string() == "self")
+            } else {
+                None
+            }
+        })
+        .next()
+        .unwrap();
     println!("{:#?}", items);
+    println!("self is \"self\": {:#?}", is_self);
 }
