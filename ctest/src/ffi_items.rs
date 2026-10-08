@@ -331,6 +331,19 @@ fn resolve_one(src: Module) -> Vec<Resolution> {
 }
 
 fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Resolution {
+    macro_rules! self_case {
+        ($it:ident, $target:expr) => {
+            if is_self($it.clone()) {
+                return Resolution::Resolved {
+                    original_use,
+                    items: FfiItems {
+                        modules: vec![$target],
+                        ..Default::default()
+                    },
+                };
+            }
+        };
+    }
     match &r#use.tree {
         RefinedUseTree::Name(syn::UseName { ident }) => {
             macro_rules! single_item {
@@ -345,6 +358,7 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Re
                     }
                 }};
             }
+            self_case!(ident, state);
             match state.items.search(ident.clone()) {
                 Some(GenericItem::Type(t)) => single_item!(aliases: t),
                 Some(GenericItem::Struct(s)) => single_item!(structs: s),
@@ -387,46 +401,46 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Re
                     }
                 }};
             }
-            match state.items.search(ident.clone()) {
-                Some(GenericItem::Module(m)) => {
-                    let new_path = {
-                        let mut base_path_segments = m.path.segments.clone();
-                        base_path_segments.pop();
-                        base_path_segments.push(syn::PathSegment {
-                            ident: rename.clone(),
-                            arguments: syn::PathArguments::None,
-                        });
-                        syn::Path {
-                            segments: base_path_segments,
-                            ..m.path
-                        }
-                    };
-                    let new_path_len = new_path.segments.len();
-                    let new_module = manipulate_path(
-                        |p| {
-                            let new_path = p.segments.clone().into_iter().skip(new_path_len).fold(
-                                new_path.clone(),
-                                |mut p, s| {
-                                    p.segments.push(s);
-                                    p
-                                },
-                            );
-                            syn::Path {
-                                leading_colon: p.leading_colon,
-                                ..new_path
-                            }
-                        },
-                        m,
-                    );
-                    let new_items = FfiItems {
-                        modules: vec![new_module],
-                        ..Default::default()
-                    };
-                    Resolution::Resolved {
-                        original_use,
-                        items: new_items,
+            let renamer = |m: Module| {
+                let new_path = {
+                    let mut base_path_segments = m.path.segments.clone();
+                    base_path_segments.pop();
+                    base_path_segments.push(syn::PathSegment {
+                        ident: rename.clone(),
+                        arguments: syn::PathArguments::None,
+                    });
+                    syn::Path {
+                        segments: base_path_segments,
+                        ..m.path
                     }
-                }
+                };
+                let new_path_len = new_path.segments.len();
+                manipulate_path(
+                    |p| {
+                        let new_path = p.segments.clone().into_iter().skip(new_path_len).fold(
+                            new_path.clone(),
+                            |mut p, s| {
+                                p.segments.push(s);
+                                p
+                            },
+                        );
+                        syn::Path {
+                            leading_colon: p.leading_colon,
+                            ..new_path
+                        }
+                    },
+                    m,
+                )
+            };
+            self_case!(ident, renamer(state));
+            match state.items.search(ident.clone()) {
+                Some(GenericItem::Module(m)) => Resolution::Resolved {
+                    original_use,
+                    items: FfiItems {
+                        modules: vec![renamer(m)],
+                        ..Default::default()
+                    },
+                },
                 Some(GenericItem::Type(t)) => single_item!(aliases, t: Type),
                 Some(GenericItem::Struct(s)) => single_item!(structs, s: Struct),
                 Some(GenericItem::Union(u)) => single_item!(unions, u: Union),
@@ -438,15 +452,19 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: Module) -> Re
         }
 
         RefinedUseTree::Path(RefinedUsePath { ident, tree }) => {
-            let new_state = match state.items.search(ident.clone()) {
-                Some(GenericItem::Module(m)) => m,
-                None => return Resolution::Unresolved,
-                Some(_) => unreachable!(
-                    "Paths parsed in ctest do not include enum variants. \
-                     Update this if support for enum variants is added. \
-                     Multi-segment import paths may then refer to items other \
-                     than modules."
-                ),
+            let new_state = if is_self(ident.clone()) {
+                state
+            } else {
+                match state.items.search(ident.clone()) {
+                    Some(GenericItem::Module(m)) => m,
+                    None => return Resolution::Unresolved,
+                    Some(_) => unreachable!(
+                        "Paths parsed in ctest do not include enum variants. \
+                         Update this if support for enum variants is added. \
+                         Multi-segment import paths may then refer to items \
+                         other than modules."
+                    ),
+                }
             };
             let new_use = RefinedUse {
                 is_public: r#use.is_public,
@@ -987,24 +1005,8 @@ mod test1 {
     }
 }
     "#;
-    let tmp = "use self as root;";
     let mut items = FfiItems::default();
-    let file = syn::parse_file(tmp).unwrap();
+    let file = syn::parse_file(source).unwrap();
     items.visit_file(&file);
-    let is_self = items
-        .uses
-        .first()
-        .cloned()
-        .into_iter()
-        .filter_map(|u| {
-            if let RefinedUseTree::Rename(syn::UseRename { ident, .. }) = u.tree.clone() {
-                Some(ident.to_string() == "self")
-            } else {
-                None
-            }
-        })
-        .next()
-        .unwrap();
     println!("{:#?}", items);
-    println!("self is \"self\": {:#?}", is_self);
 }

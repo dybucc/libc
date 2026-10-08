@@ -163,4 +163,45 @@ case is of a single identifier. There should be no need for
 sanitization. This is a good opportunity for implementation. A change to
 the above cases will not affect the prior revision of the algorithm. The
 self keyword requires no module tree state. It may be readily
-implemented.
+implemented. The current proof takes into account solely a lookup into
+the container. The revised version should check for keywords. The only
+feasible keyword to implement at present is the self keyword. This
+should come before the lookup in the item container. Recall the current
+stateful module corresponds exactly to the self module. A resolution
+follows immediately if the self module is brought over. The question
+becomes the format of the item container packed in the resolution item.
+Should it be a virutal container? Yes. self imports no immediate set of
+items. It only brings over a module. The simplest next keyword to parse
+is the crate keyword. That keyword is meant to be the source of an
+absolute import path. Is that supposed to mean anything to the
+algorithm? Yes. The place where it is checked can not be any place. self
+also can not be checked only in the name case. It also has to be checked
+in the rename case. The case for paths also needs to consider it. That
+makes it notable in all cases. Sanitification is not necessary.
+Well-formed input is expected. The case for renames need some more
+attention. The current logic for renames could be reused. It is the same
+for both the lookup and the self case. The lookup first finds a module.
+Then it decides to modify the path of the module. Then it manipulates
+the paths of all items in the subtree rooted at that module. The idea is
+the same. It may be feasible to have a closure do this. It would get
+passed an arbitrary module to rename. The case of a path requires
+further discussion. The self keyword may appear at the start of the
+path. It may also appear at the end of a path. The latter matches
+against the name basecase during reexport resolution. Well-formed input
+does not contain a self module in the middle of a path. Or does it? It
+does not. A diagnostic reports just this. The self keyword may only
+appear as a starting or ending segment in a path. Well-formed input is
+guaranteed here. That should precede the lookups. The self keyword
+indicates to carry through with the same stateful module. This will not
+use the utility macro. That questions the approach used in that macro.
+Though one thing is clear. The lookup should go after the self check.
+The new state is now conditionally determined. It can be the same old
+state if the path head is the self keyword. It can be the result of the
+lookup if the path head is not the self keyword. Discussion is merited
+to support other keywords. That check in paths will eventually consider
+also the super and crate keywords. The check will have to be expanded.
+Though the same strategy should be feasible. The new state is
+conditionally defined. It is the current module in the self case. It is
+the parent module in the super case. It is the module tree in the crate
+case. This makes it obvious there is need for the module tree as state.
+The crate case would make both pieces of state become the module tree.
