@@ -147,12 +147,12 @@ impl FfiItems {
         *self = resolve_all(root_module).items;
     }
 
-    /// Perfomrs a comparison for equality between FfiItems without taking field
+    /// Performs a comparison for equality between FfiItems without taking field
     /// current_module into consideration.
     ///
     /// This is not an implementation of PartialEq for FfiItems because it would
     /// be unintuitive to have it ignore one field. This is only ever needed
-    /// during use statement resolution.
+    /// during use declaration resolution.
     pub(super) fn custom_eq(&self, other: &Self) -> bool {
         self.aliases == other.aliases
             && self.structs == other.structs
@@ -274,8 +274,8 @@ pub(crate) struct RefinedUse {
     tree: RefinedUseTree,
 }
 
-/// Gets rid of group reexports in a `use` statement by flattenning them into a
-/// set of individual reexports.
+/// Gets rid of group reexports in a `use` declaration by flattenning them into
+/// a set of individual reexports.
 fn normalize_path(path: syn::UseTree) -> Vec<RefinedUseTree> {
     match path {
         UseTree::Name(n) => vec![RefinedUseTree::Name(n)],
@@ -315,11 +315,11 @@ fn resolve_all(root: Module) -> Module {
     let (ControlFlow::Break(m) | ControlFlow::Continue(m)) =
         iter::repeat(()).try_fold(root, |root, _| {
             // [NOTE]: it holds that a pass over the crate root will yield the
-            // crate root as its subtree. It is thus safe to ignore whole-crate
-            // module tree (they're the same at this point.)
+            // crate root as its subtree. It is thus safe to ignore the
+            // whole-crate module tree. They are the same at this point.
             let PassPair {
                 subtree: new_root, ..
-            } = resolve_pass(&PassPair {
+            } = resolve_pass(PassPair {
                 subtree: root.clone(),
                 whole_crate: root.clone(),
             });
@@ -331,6 +331,7 @@ fn resolve_all(root: Module) -> Module {
     m
 }
 
+#[derive(Debug, Clone)]
 enum Resolution {
     Resolved {
         original_use: RefinedUse,
@@ -339,41 +340,52 @@ enum Resolution {
     Unresolved,
 }
 
-fn resolve_pass(src: &PassPair) -> PassPair {
+fn resolve_pass(src: PassPair) -> PassPair {
     let (PassPair { whole_crate, .. }, resolved_children) =
-        root.items.modules.clone().into_iter().fold(
-            (src, Vec::new()),
+        src.subtree.items.modules.clone().into_iter().fold(
+            (src.clone(), Vec::new()),
             |(PassPair { whole_crate, .. }, mut children), m| {
                 let pair = resolve_pass(PassPair {
                     subtree: m,
-                    whole_crate,
+                    whole_crate: whole_crate.clone(),
                 });
-                children.push(pair.subtree);
+                children.push(pair.subtree.clone());
                 (pair, children)
             },
         );
-    let resolved_uses = resolve_one(PassPair {
-        subtree: Module {
-            items: FfiItems {
-                modules: resolved_children,
-                ..src.subtree.items
-            },
-            ..src.subtree
+    let root_with_resolved_children = Module {
+        items: FfiItems {
+            modules: resolved_children,
+            ..src.subtree.items
         },
+        ..src.subtree
+    };
+    let resolved_uses = resolve_one(PassPair {
+        subtree: root_with_resolved_children.clone(),
         whole_crate,
     });
-    let new_root = merge_module(root.clone(), resolved_uses.clone());
+    let new_root = merge_module(root_with_resolved_children, resolved_uses);
     let new_root = Module {
         items: new_root.items.dedup(),
         ..new_root
     };
-    todo!("produce a new whole-crate module tree through the new subtree");
-    new_root
+    let new_whole_crate = update_tree(PassPair {
+        subtree: new_root,
+        whole_crate: new_whole_crate,
+    });
+    PassPair {
+        subtree: new_root,
+        whole_crate: new_whole_crate,
+    }
 }
 
-fn resolve_one(src: PassPair) -> Vec<Resolution> {
-    src.subtree
-        .items
+fn resolve_one(
+    PassPair {
+        subtree: root,
+        whole_crate: state,
+    }: PassPair,
+) -> Vec<Resolution> {
+    root.items
         .uses
         .clone()
         .into_iter()
@@ -382,7 +394,7 @@ fn resolve_one(src: PassPair) -> Vec<Resolution> {
                 u.clone(),
                 u,
                 PassPair {
-                    subtree: src.clone(),
+                    subtree: root.clone(),
                     whole_crate: state.clone(),
                 },
             )
@@ -537,6 +549,18 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: PassPair) -> 
 
 fn is_self(ident: syn::Ident) -> bool {
     ident.to_string() == "self"
+}
+
+fn is_crate(ident: syn::Ident) -> bool {
+    ident.to_string() == "crate"
+}
+
+fn is_super(ident: syn::Ident) -> bool {
+    ident.to_string() == "super"
+}
+
+fn update_tree(src: Module, dst: Module) -> Module {
+    todo!();
 }
 
 fn manipulate_path(f: impl ops::Fn(syn::Path) -> syn::Path + Clone, root: Module) -> Module {

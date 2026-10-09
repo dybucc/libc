@@ -261,5 +261,34 @@ back in the single-pass proposition. The proof now has a set of
 resolution items. It needs to merge those with the module currently at
 hand. Then it needs to deduplicate the items. The last thing is to
 update the stateful module tree. Merging already has a dedicated
-proposition. Deduplication also has a dedicated proposition. Updating
-the module tree does not.
+proposition. Deduplication also has a dedicated proposition. Whole-crate
+module tree updates do not. That will require more work than the
+equality proposition. The goal is to find a subtree in the crate tree.
+Recursive updates are not necessary. The subtree need only update the
+data of the subtree's root. That will be justified now. The simplest
+case is a leaf node. These are resolved first. That is thanks to the
+depth-first approach taken in the single-pass proposition. The
+whole-crate module tree is updated here as well. The update would find
+the leaf module. Then it would update its items. The leaf has no child
+modules. So the only updated items are non-modules. The whole-crate
+module now contains an updated leaf. Say it now goes to this leaf's
+parent module. Suppose this parent module contains one other child
+module. Further suppose that this other child is also a leaf. The
+whole-crate module tree would be updated anew. Then it would reflect
+both resolved child modules. Then comes the time to resolve the parent
+module. One could attempt to resolve it and its children. There is no
+need for the latter. There may be one exception to this. The module may
+now have new child modules. That does not change one basic fact. The
+module ought be found in the whole-crate tree. Then it needs to have its
+items replaced with the updated module's items. That should get the job
+done every time. A recap is in order. The proposition should assume one
+module. Then it should assume another module. One is the crate root. The
+other is the subtree. The subtree could also be the crate root. It is
+best if a pass pair is passed instead. Though it should not imply a pass
+pair. It should only imply a module. That should be the updated
+whole-crate module tree. There is a problem in this approach. The
+proposition will be used inductively in its proof. That means a pass
+pair would be misleading. One of the projections refers to the
+whole-crate tree. The other does not. The proposition will be used with
+some other module in the whole-crate tree. The proof is not entirely
+clear.
