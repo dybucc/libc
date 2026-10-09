@@ -291,4 +291,47 @@ proposition will be used inductively in its proof. That means a pass
 pair would be misleading. One of the projections refers to the
 whole-crate tree. The other does not. The proposition will be used with
 some other module in the whole-crate tree. The proof is not entirely
-clear.
+clear. The destination module's path has to be checked with the source
+module's path. A match means the latter's proof must be implied. A
+mismatch means the former's children must be matched. This should be
+done through a fold transform. Recall only one module matches. The fold
+should be prone to termination. What should the fold's seed be? It is
+known the source module will surely be found. That is not a guarantee
+the type system understands. A dummy value should do. The handiest one
+is the source module. This is incorrect. Recall the proposition performs
+walks on the module tree. One such walk could hit a dead-end. Such a
+dead-end would manifest itself in a leaf module. That should imply a
+coproduct. Its injections should correspond with the identity functor
+and an injective const functor. That should be the seed of the fold over
+the list of child modules. This means the whole proposition should imply
+the above coproduct. The proof is wrong. One should not fold over the
+list of child modules. That would mean some modules are downright lost.
+The simplest example is a one-level deep module tree. Suppose there are
+an arbitrary number n of nodes. Assume n is greater than 1. Further
+suppose that the update subtree is on of these child modules. The
+current proof would discard both the root module and the sibling module.
+The proof should map over the list of child modules. Then it should
+imply the mismatched module with the updated children. One of those
+children modules will have matched the source module. That should do it
+for the single-pass proposition. The next thing should be the
+single-reexport proposition. Each case will be discussed in turn. The
+name basecase can only ever refer to self and super. The self case is
+covered. A similar macro could be elaborated for the super case. Is
+super really possible in the name basecase? It can not. Can the crate
+keyword appear alone? Not the case. The only one that can appear as a
+basecase is the self keyword. The crate keyword can only appear at the
+start of a path. The super keyword can only appear in the rename case.
+It is otherwise a segment head in a larger path. The rename case for a
+super keyword should access the module right above the current one. That
+means there is need for an auxiliary proposition. That proposition
+should assume the whole-crate module tree. It should also assume a path.
+It should then look for that path in the module tree. Then there should
+be need for another auxiliary proposition. This should get the parent
+path to some module. It should assume a module subtree. It should imply
+a path. That will then be used in the assumption for the prior
+proposition. The proof for the parent path is fairly simple. It should
+take a certain number of segments from the assumed module's path. The
+number should correspond with one fewer segment than the path contains.
+The proposition to fetch a given module should first match on the path
+of the subtree with the target path. A mismatch indicates it should fold
+over the module's child paths. The fold should be prone to termination.

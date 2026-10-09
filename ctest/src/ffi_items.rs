@@ -153,6 +153,9 @@ impl FfiItems {
     /// This is not an implementation of PartialEq for FfiItems because it would
     /// be unintuitive to have it ignore one field. This is only ever needed
     /// during use declaration resolution.
+    ///
+    /// The visibility restriction allows the Module type in ast/module.rs to
+    /// have access to it.
     pub(super) fn custom_eq(&self, other: &Self) -> bool {
         self.aliases == other.aliases
             && self.structs == other.structs
@@ -362,17 +365,14 @@ fn resolve_pass(src: PassPair) -> PassPair {
     };
     let resolved_uses = resolve_one(PassPair {
         subtree: root_with_resolved_children.clone(),
-        whole_crate,
+        whole_crate: whole_crate.clone(),
     });
     let new_root = merge_module(root_with_resolved_children, resolved_uses);
     let new_root = Module {
         items: new_root.items.dedup(),
         ..new_root
     };
-    let new_whole_crate = update_tree(PassPair {
-        subtree: new_root,
-        whole_crate: new_whole_crate,
-    });
+    let new_whole_crate = update_tree(new_root.clone(), whole_crate);
     PassPair {
         subtree: new_root,
         whole_crate: new_whole_crate,
@@ -430,6 +430,13 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: PassPair) -> 
                     }
                 }};
             }
+            // [NOTE]: self may not appear as the name basecase of a well-formed
+            // path. And yet it is still considered here. That is because of
+            // path normalization. self may appear as part of a tail group in a
+            // use declaration's path. Path normalization flattens groups into
+            // individual use statements. Path normalizatio is done through
+            // normalize_path above. That happens at parse-time. That is why
+            // this function must consider the case of self as a name basecase.
             self_case!(ident, state.subtree);
             match state.subtree.items.search(ident.clone()) {
                 Some(GenericItem::Type(t)) => single_item!(aliases: t),
@@ -547,6 +554,33 @@ fn resolve_use(original_use: RefinedUse, r#use: RefinedUse, state: PassPair) -> 
     }
 }
 
+fn get_module(target: syn::Path, root: Module) {
+    if root.path == target {
+        return root;
+    }
+    todo!(
+        "Fold over the list of child modules. Do so with a termination-prone \
+         transform."
+    );
+}
+
+fn get_parent_path(root: Module) -> syn::Path {
+    let new_segments = root
+        .path
+        .segments
+        .clone()
+        .into_iter()
+        .take(root.path.segments.len().saturating_sub(1))
+        .fold(Punctuated::new(), |mut p, s| {
+            p.push(s);
+            p
+        });
+    syn::Path {
+        leading_colon: None,
+        segments: new_segments,
+    }
+}
+
 fn is_self(ident: syn::Ident) -> bool {
     ident.to_string() == "self"
 }
@@ -560,7 +594,23 @@ fn is_super(ident: syn::Ident) -> bool {
 }
 
 fn update_tree(src: Module, dst: Module) -> Module {
-    todo!();
+    if src.path == dst.path {
+        return src.into();
+    }
+    let new_children = dst
+        .items
+        .modules
+        .clone()
+        .into_iter()
+        .map(|m| update_tree(src.clone(), m))
+        .collect();
+    Module {
+        items: FfiItems {
+            modules: new_children,
+            ..dst.items
+        },
+        ..dst
+    }
 }
 
 fn manipulate_path(f: impl ops::Fn(syn::Path) -> syn::Path + Clone, root: Module) -> Module {
